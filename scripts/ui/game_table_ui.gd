@@ -38,6 +38,7 @@ func _connect_signals() -> void:
 	rm.card_played_signal.connect(_on_card_played)
 	rm.trick_completed.connect(_on_trick_completed)
 	rm.round_ended.connect(_on_round_ended)
+	GameState.round_started.connect(_on_round_started)
 
 func _get_hand_container(seat: int) -> BoxContainer:
 	match seat:
@@ -136,10 +137,11 @@ func _on_card_played(seat: int, card: Card) -> void:
 
 func _on_trick_completed(winner_seat: int, books: Array) -> void:
 	books_label.text = "Books — You: %d | Opp: %d" % [books[0], books[1]]
-	# Clear trick area after short delay
-	get_tree().create_timer(1.2).timeout.connect(func():
-		for child in trick_area.get_children():
-			child.queue_free()
+	# Clear trick area after short delay (0.3s < AI minimum delay of 0.5s)
+	get_tree().create_timer(0.3).timeout.connect(func():
+		if is_instance_valid(trick_area):
+			for child in trick_area.get_children():
+				child.queue_free()
 	)
 
 func _on_round_ended(winning_team: int) -> void:
@@ -148,3 +150,16 @@ func _on_round_ended(winning_team: int) -> void:
 	if _win_screen_overlay != null:
 		_win_screen_overlay.call("show_result", winning_team, wins)
 		_win_screen_overlay.visible = true
+
+func _clear_table() -> void:
+	for container in [bottom_hand, top_hand, left_hand, right_hand, trick_area]:
+		for child in container.get_children():
+			child.queue_free()
+	_selected_card = null
+	_current_valid_cards.clear()
+	trump_label.text = "Trump: —"
+	books_label.text = "Books — You: 0 | Opp: 0"
+	turn_label.text = "—'s turn"
+
+func _on_round_started(_dealer_seat: int, _trump_selector_seat: int) -> void:
+	_clear_table()

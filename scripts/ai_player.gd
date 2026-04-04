@@ -22,8 +22,17 @@ func choose_card(valid_cards: Array[Card], current_trick: Trick, partner_seat: i
 	if current_trick.cards_played() == 0:
 		return hand.lowest_card(valid_cards)
 
-	# Determine if partner is currently winning
-	var current_winner_idx := current_trick.get_winner_index() if current_trick.cards_played() > 0 else -1
+	# Determine if partner is currently winning (without calling get_winner_index on incomplete trick)
+	var current_winner_idx := -1
+	if current_trick.cards_played() > 0:
+		var winning_entry: Dictionary = current_trick.played[0]
+		for i in range(1, current_trick.played.size()):
+			var entry: Dictionary = current_trick.played[i]
+			var challenger: Card = entry["card"] as Card
+			var cur_winner_card: Card = winning_entry["card"] as Card
+			if challenger.beats(cur_winner_card, current_trick.led_suit as Card.Suit, current_trick.trump_suit):
+				winning_entry = entry
+		current_winner_idx = winning_entry["player_index"]
 	var partner_is_winning := (current_winner_idx == partner_seat)
 
 	# Case 2: Partner is currently winning — discard lowest non-trump card

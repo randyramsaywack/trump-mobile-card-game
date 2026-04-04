@@ -23,5 +23,4 @@ func _on_next_round() -> void:
 	GameState.start_next_round()
 
 func _on_main_menu() -> void:
-	visible = false
-	GameState.start_session()
+	get_tree().reload_current_scene()

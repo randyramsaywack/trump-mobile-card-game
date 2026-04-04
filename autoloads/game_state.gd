@@ -25,9 +25,12 @@ func start_session() -> void:
 	session_wins = [0, 0]
 	_setup_players()
 	dealer_seat = randi() % 4
-	# Track which team is dealing initially
-	var dealing_team := 0 if dealer_seat in [0, 1] else 1
-	_team_dealer[dealing_team] = dealer_seat
+	# Initialize dealer tracking for both teams
+	var starting_dealing_team := 0 if dealer_seat in [0, 1] else 1
+	var starting_other_team := 1 - starting_dealing_team
+	_team_dealer[starting_dealing_team] = dealer_seat
+	# Other team's default dealer: use the lower-index seat of that team
+	_team_dealer[starting_other_team] = 0 if starting_other_team == 0 else 2
 	session_started.emit()
 	_start_round()
 
