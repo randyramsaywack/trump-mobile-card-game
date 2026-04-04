@@ -19,9 +19,10 @@ var _selected_card: Card = null
 var _current_valid_cards: Array[Card] = []
 var _trump_selector_overlay: Control = null
 var _win_screen_overlay: Control = null
+var _current_round_id: int = 0
 
 func _ready() -> void:
-	timer_label.visible = false
+	timer_label.visible = false  # multiplayer only: show when turn timer is active
 	_connect_signals()
 	_trump_selector_overlay = TrumpSelectorScene.instantiate()
 	_trump_selector_overlay.visible = false
@@ -150,7 +151,10 @@ func _on_card_played(seat: int, card: Card) -> void:
 
 func _on_trick_completed(winner_seat: int, books: Array) -> void:
 	books_label.text = "Books — You: %d | Opp: %d" % [books[0], books[1]]
+	var round_id := _current_round_id
 	get_tree().create_timer(0.3).timeout.connect(func():
+		if _current_round_id != round_id:
+			return  # round changed, skip stale clear
 		if is_instance_valid(trick_area):
 			for slot_name in ["NorthSlot", "WestSlot", "EastSlot", "SouthSlot"]:
 				var slot := trick_area.get_node_or_null(slot_name)
@@ -182,4 +186,5 @@ func _clear_table() -> void:
 	turn_label.text = "—'s turn"
 
 func _on_round_started(_dealer_seat: int, _trump_selector_seat: int) -> void:
+	_current_round_id += 1
 	_clear_table()
