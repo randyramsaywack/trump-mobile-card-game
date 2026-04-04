@@ -1,26 +1,60 @@
-[gd_scene load_steps=2 format=3 uid="uid://card_scene"]
+[gd_scene load_steps=3 format=3 uid="uid://card_scene"]
 
 [ext_resource type="Script" path="res://scripts/ui/card_ui.gd" id="1_card_ui"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_face"]
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.78, 0.78, 0.78, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.18)
+shadow_size = 3
+shadow_offset = Vector2(1, 2)
+
 [node name="CardUI" type="PanelContainer"]
 script = ExtResource("1_card_ui")
-custom_minimum_size = Vector2(60, 90)
+custom_minimum_size = Vector2(52, 78)
+theme_override_styles/panel = SubResource("StyleBoxFlat_face")
 
-[node name="VBox" type="VBoxContainer" parent="."]
+[node name="FaceContent" type="Control" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 4.0
-offset_top = 4.0
-offset_right = -4.0
-offset_bottom = -4.0
 
-[node name="RankLabel" type="Label" parent="VBox"]
-layout_mode = 2
+[node name="TopRank" type="Label" parent="FaceContent"]
+offset_left = 3.0
+offset_top = 3.0
+offset_right = 30.0
+offset_bottom = 20.0
 text = "A"
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 13
 
-[node name="SuitLabel" type="Label" parent="VBox"]
-layout_mode = 2
+[node name="TopSuit" type="Label" parent="FaceContent"]
+offset_left = 3.0
+offset_top = 17.0
+offset_right = 25.0
+offset_bottom = 30.0
+text = "♠"
+theme_override_font_sizes/font_size = 10
+
+[node name="CenterSuit" type="Label" parent="FaceContent"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 text = "♠"
 horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 32
+
+[node name="BackContent" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.1, 0.22, 0.42, 1)
+visible = false

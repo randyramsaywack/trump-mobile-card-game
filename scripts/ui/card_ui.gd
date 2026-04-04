@@ -1,61 +1,57 @@
 extends PanelContainer
 
-@onready var rank_label: Label = $VBox/RankLabel
-@onready var suit_label: Label = $VBox/SuitLabel
+@onready var face_content: Control = $FaceContent
+@onready var top_rank: Label = $FaceContent/TopRank
+@onready var top_suit: Label = $FaceContent/TopSuit
+@onready var center_suit: Label = $FaceContent/CenterSuit
+@onready var back_content: ColorRect = $BackContent
 
 var card_data: Card = null
+var _face_up: bool = true
 var _is_valid: bool = true
-var _is_selected: bool = false
-var _face_up: bool = true  # cached until _ready() runs
 
 signal card_tapped(card: Card)
 
-const SUIT_COLORS: Dictionary = {
-	Card.Suit.SPADES: Color.BLACK,
-	Card.Suit.CLUBS: Color.BLACK,
-	Card.Suit.HEARTS: Color(0.8, 0.1, 0.1),
-	Card.Suit.DIAMONDS: Color(0.8, 0.1, 0.1)
-}
+const RED := Color(0.78, 0.08, 0.08)
+const BLACK := Color(0.05, 0.05, 0.05)
 
 func setup(c: Card, face_up: bool = true) -> void:
 	card_data = c
 	_face_up = face_up
-	# If already in the scene tree, update labels immediately.
-	# Otherwise _ready() will call this again after @onready vars are set.
 	if is_inside_tree():
-		if face_up:
-			_show_face()
-		else:
-			_show_back()
+		_apply_display()
 
 func _ready() -> void:
-	# Apply display now that @onready nodes are available
 	if card_data != null:
-		if _face_up:
-			_show_face()
-		else:
-			_show_back()
+		_apply_display()
+
+func _apply_display() -> void:
+	if _face_up:
+		_show_face()
+	else:
+		_show_back()
 
 func _show_face() -> void:
-	rank_label.text = Card.RANK_NAMES[card_data.rank]
-	suit_label.text = Card.SUIT_SYMBOLS[card_data.suit]
-	var color: Color = SUIT_COLORS[card_data.suit]
-	rank_label.add_theme_color_override("font_color", color)
-	suit_label.add_theme_color_override("font_color", color)
+	face_content.visible = true
+	back_content.visible = false
+	var color := RED if card_data.suit in [Card.Suit.HEARTS, Card.Suit.DIAMONDS] else BLACK
+	top_rank.text = Card.RANK_NAMES[card_data.rank]
+	top_suit.text = Card.SUIT_SYMBOLS[card_data.suit]
+	center_suit.text = Card.SUIT_SYMBOLS[card_data.suit]
+	top_rank.add_theme_color_override("font_color", color)
+	top_suit.add_theme_color_override("font_color", color)
+	center_suit.add_theme_color_override("font_color", color)
 
 func _show_back() -> void:
-	rank_label.text = ""
-	suit_label.text = "?"
-	rank_label.add_theme_color_override("font_color", Color.WHITE)
-	suit_label.add_theme_color_override("font_color", Color(0.1, 0.1, 0.5))
+	face_content.visible = false
+	back_content.visible = true
 
 func set_valid(valid: bool) -> void:
 	_is_valid = valid
-	modulate.a = 1.0 if valid else 0.4
+	modulate.a = 1.0 if valid else 0.45
 
 func set_selected(selected: bool) -> void:
-	_is_selected = selected
-	position.y = -20.0 if selected else 0.0
+	position.y = -15.0 if selected else 0.0
 
 func _gui_input(event: InputEvent) -> void:
 	if card_data == null or not _is_valid:
