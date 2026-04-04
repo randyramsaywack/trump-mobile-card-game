@@ -1,0 +1,61 @@
+[gd_scene load_steps=2 format=3 uid="uid://trumpsel"]
+
+[ext_resource type="Script" path="res://scripts/ui/trump_selector_ui.gd" id="1_trumpsel"]
+
+[node name="TrumpSelector" type="Control"]
+script = ExtResource("1_trumpsel")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="PromptLabel" type="Label" parent="."]
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.3
+anchor_right = 0.9
+anchor_bottom = 0.4
+text = "Choose Trump Suit"
+horizontal_alignment = 1
+
+[node name="CardsContainer" type="HBoxContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.4
+anchor_right = 0.95
+anchor_bottom = 0.55
+alignment = 1
+
+[node name="SuitButtons" type="HBoxContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.6
+anchor_right = 0.95
+anchor_bottom = 0.75
+alignment = 1
+
+[node name="SpadesBtn" type="Button" parent="SuitButtons"]
+layout_mode = 2
+text = "♠ Spades"
+custom_minimum_size = Vector2(80, 48)
+
+[node name="HeartsBtn" type="Button" parent="SuitButtons"]
+layout_mode = 2
+text = "♥ Hearts"
+custom_minimum_size = Vector2(80, 48)
+
+[node name="DiamondsBtn" type="Button" parent="SuitButtons"]
+layout_mode = 2
+text = "♦ Diamonds"
+custom_minimum_size = Vector2(80, 48)
+
+[node name="ClubsBtn" type="Button" parent="SuitButtons"]
+layout_mode = 2
+text = "♣ Clubs"
+custom_minimum_size = Vector2(80, 48)
