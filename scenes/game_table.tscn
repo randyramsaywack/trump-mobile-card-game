@@ -1,0 +1,79 @@
+[gd_scene load_steps=2 format=3 uid="uid://gametable"]
+
+[ext_resource type="Script" path="res://scripts/ui/game_table_ui.gd" id="1_gametable"]
+
+[node name="GameTable" type="Control"]
+script = ExtResource("1_gametable")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="HUD" type="HBoxContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 1
+
+[node name="TrumpLabel" type="Label" parent="HUD"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Trump: —"
+
+[node name="BooksLabel" type="Label" parent="HUD"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Books — You: 0 | Opp: 0"
+
+[node name="SessionLabel" type="Label" parent="HUD"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Session — You: 0 | Opp: 0"
+
+[node name="TurnLabel" type="Label" parent="HUD"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "—'s turn"
+
+[node name="TopHand" type="HBoxContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.0
+anchor_right = 0.9
+offset_top = 50.0
+offset_bottom = 130.0
+
+[node name="LeftHand" type="VBoxContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.0
+anchor_top = 0.2
+anchor_right = 0.0
+anchor_bottom = 0.8
+offset_right = 70.0
+
+[node name="RightHand" type="VBoxContainer" parent="."]
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = 0.2
+anchor_right = 1.0
+anchor_bottom = 0.8
+offset_left = -70.0
+
+[node name="TrickArea" type="HBoxContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.2
+anchor_top = 0.35
+anchor_right = 0.8
+anchor_bottom = 0.65
+alignment = 1
+
+[node name="BottomHand" type="HBoxContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -130.0
+alignment = 1
