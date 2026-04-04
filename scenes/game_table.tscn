@@ -60,6 +60,7 @@ theme_override_font_sizes/font_size = 11
 
 [node name="TimerLabel" type="Label" parent="HUD/HUDRow2"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = ""
 theme_override_font_sizes/font_size = 11
 visible = false
