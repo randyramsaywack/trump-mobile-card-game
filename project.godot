@@ -1,0 +1,28 @@
+; Engine configuration file.
+; Generated for Trump card game — Godot 4.6.2
+
+config_version=5
+
+[application]
+
+config/name="Trump"
+config/run/main_scene="res://scenes/game_table.tscn"
+config/features=PackedStringArray("4.6", "Mobile")
+config/icon="res://icon.svg"
+
+[autoload]
+
+GameState="*res://autoloads/game_state.gd"
+NetworkState="*res://autoloads/network_state.gd"
+
+[display]
+
+window/size/viewport_width=390
+window/size/viewport_height=844
+window/size/resizable=false
+window/handheld/orientation=1
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="gl_compatibility"
