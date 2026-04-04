@@ -6,6 +6,7 @@ extends PanelContainer
 var card_data: Card = null
 var _is_valid: bool = true
 var _is_selected: bool = false
+var _face_up: bool = true  # cached until _ready() runs
 
 signal card_tapped(card: Card)
 
@@ -18,10 +19,22 @@ const SUIT_COLORS: Dictionary = {
 
 func setup(c: Card, face_up: bool = true) -> void:
 	card_data = c
-	if face_up:
-		_show_face()
-	else:
-		_show_back()
+	_face_up = face_up
+	# If already in the scene tree, update labels immediately.
+	# Otherwise _ready() will call this again after @onready vars are set.
+	if is_inside_tree():
+		if face_up:
+			_show_face()
+		else:
+			_show_back()
+
+func _ready() -> void:
+	# Apply display now that @onready nodes are available
+	if card_data != null:
+		if _face_up:
+			_show_face()
+		else:
+			_show_back()
 
 func _show_face() -> void:
 	rank_label.text = Card.RANK_NAMES[card_data.rank]

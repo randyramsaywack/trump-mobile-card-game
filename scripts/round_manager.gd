@@ -1,4 +1,5 @@
 class_name RoundManager
+extends Node
 
 signal hand_dealt(seat_index: int, cards: Array)
 signal trump_selection_needed(seat_index: int, initial_cards: Array)
@@ -77,9 +78,8 @@ func _do_trump_selection() -> void:
 
 func _do_deal_remaining() -> void:
 	# Each player needs 13 cards total.
-	# Trump selector already has 5, needs 8 more. Others need 13.
+	# Trump selector already has 5 — the target for all players is 13.
 	var needs: Array[int] = [13, 13, 13, 13]
-	needs[trump_selector_seat] = 8
 
 	# Deal clockwise starting from trump selector until all hands are full
 	var seat := trump_selector_seat

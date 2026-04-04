@@ -17,7 +17,8 @@ func _ready() -> void:
 	round_manager.round_ended.connect(_on_round_ended)
 
 func _process(delta: float) -> void:
-	round_manager.tick(delta)
+	if round_manager != null:
+		round_manager.tick(delta)
 
 ## Start a fresh session: reset session wins, randomize dealer, begin first round.
 func start_session() -> void:
@@ -50,7 +51,7 @@ func _on_round_ended(winning_team: int) -> void:
 
 ## Alternate between the two seats of the losing team.
 func _rotate_dealer(losing_team: int) -> void:
-	var current := _team_dealer[losing_team]
+	var current: int = _team_dealer[losing_team]
 	var team_seats: Array[int] = [0, 1] if losing_team == 0 else [2, 3]
 	var other_seat: int = team_seats[1] if current == team_seats[0] else team_seats[0]
 	_team_dealer[losing_team] = other_seat

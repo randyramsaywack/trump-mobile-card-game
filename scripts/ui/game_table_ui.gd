@@ -60,7 +60,8 @@ func _on_hand_dealt(seat: int, cards: Array) -> void:
 		container.add_child(card_node)
 
 func _on_trump_selection_needed(seat: int, initial_cards: Array) -> void:
-	if _trump_selector_overlay != null:
+	# Only show the human trump selection UI when the human player (seat 0) is selecting
+	if seat == 0 and _trump_selector_overlay != null:
 		_trump_selector_overlay.call("show_for_human", initial_cards)
 		_trump_selector_overlay.visible = true
 
