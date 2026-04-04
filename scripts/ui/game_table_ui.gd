@@ -2,13 +2,14 @@ extends Control
 
 @onready var bottom_hand: HBoxContainer = $BottomHand
 @onready var top_hand: HBoxContainer = $TopHand
-@onready var left_hand: VBoxContainer = $LeftHand
-@onready var right_hand: VBoxContainer = $RightHand
-@onready var trick_area: HBoxContainer = $TrickArea
-@onready var trump_label: Label = $HUD/TrumpLabel
-@onready var books_label: Label = $HUD/BooksLabel
-@onready var session_label: Label = $HUD/SessionLabel
-@onready var turn_label: Label = $HUD/TurnLabel
+@onready var left_hand: VBoxContainer = $MidRow/LeftHand
+@onready var right_hand: VBoxContainer = $MidRow/RightHand
+@onready var trick_area: Control = $MidRow/TrickArea
+@onready var trump_label: Label = $HUD/HUDRow1/TrumpLabel
+@onready var books_label: Label = $HUD/HUDRow1/BooksLabel
+@onready var session_label: Label = $HUD/HUDRow2/SessionLabel
+@onready var turn_label: Label = $HUD/HUDRow2/TurnLabel
+@onready var timer_label: Label = $HUD/HUDRow2/TimerLabel
 
 const CardScene := preload("res://scenes/card.tscn")
 const TrumpSelectorScene := preload("res://scenes/ui/trump_selector.tscn")
@@ -20,6 +21,7 @@ var _trump_selector_overlay: Control = null
 var _win_screen_overlay: Control = null
 
 func _ready() -> void:
+	timer_label.visible = false
 	_connect_signals()
 	_trump_selector_overlay = TrumpSelectorScene.instantiate()
 	_trump_selector_overlay.visible = false
@@ -48,6 +50,14 @@ func _get_hand_container(seat: int) -> BoxContainer:
 		3: return right_hand
 	return null
 
+func _get_trick_slot(seat: int) -> Control:
+	match seat:
+		0: return trick_area.get_node("SouthSlot")
+		1: return trick_area.get_node("NorthSlot")
+		2: return trick_area.get_node("WestSlot")
+		3: return trick_area.get_node("EastSlot")
+	return null
+
 func _on_hand_dealt(seat: int, cards: Array) -> void:
 	var container := _get_hand_container(seat)
 	if container == null:
@@ -55,13 +65,16 @@ func _on_hand_dealt(seat: int, cards: Array) -> void:
 	var face_up := (seat == 0)
 	for card in cards:
 		var card_node := CardScene.instantiate() as PanelContainer
+		if seat != 0:
+			card_node.custom_minimum_size = Vector2(26, 38)
 		card_node.call("setup", card, face_up)
 		if face_up:
 			card_node.connect("card_tapped", _on_card_tapped)
 		container.add_child(card_node)
+		if face_up:
+			card_node.z_index = container.get_child_count()
 
 func _on_trump_selection_needed(seat: int, initial_cards: Array) -> void:
-	# Only show the human trump selection UI when the human player (seat 0) is selecting
 	if seat == 0 and _trump_selector_overlay != null:
 		_trump_selector_overlay.call("show_for_human", initial_cards)
 		_trump_selector_overlay.visible = true
@@ -123,25 +136,27 @@ func _reset_hand_state() -> void:
 		child.call("set_selected", false)
 
 func _on_card_played(seat: int, card: Card) -> void:
-	# Remove card node from the hand container
 	var container := _get_hand_container(seat)
 	if container != null:
 		for child in container.get_children():
 			if child.get("card_data") == card:
 				child.queue_free()
 				break
-	# Add card to trick area
-	var trick_card := CardScene.instantiate() as PanelContainer
-	trick_card.call("setup", card, true)
-	trick_area.add_child(trick_card)
+	var slot := _get_trick_slot(seat)
+	if slot != null:
+		var trick_card := CardScene.instantiate() as PanelContainer
+		trick_card.call("setup", card, true)
+		slot.add_child(trick_card)
 
 func _on_trick_completed(winner_seat: int, books: Array) -> void:
 	books_label.text = "Books — You: %d | Opp: %d" % [books[0], books[1]]
-	# Clear trick area after short delay (0.3s < AI minimum delay of 0.5s)
 	get_tree().create_timer(0.3).timeout.connect(func():
 		if is_instance_valid(trick_area):
-			for child in trick_area.get_children():
-				child.queue_free()
+			for slot_name in ["NorthSlot", "WestSlot", "EastSlot", "SouthSlot"]:
+				var slot := trick_area.get_node_or_null(slot_name)
+				if slot != null:
+					for child in slot.get_children():
+						child.queue_free()
 	)
 
 func _on_round_ended(winning_team: int) -> void:
@@ -152,9 +167,14 @@ func _on_round_ended(winning_team: int) -> void:
 		_win_screen_overlay.visible = true
 
 func _clear_table() -> void:
-	for container in [bottom_hand, top_hand, left_hand, right_hand, trick_area]:
+	for container in [bottom_hand, top_hand, left_hand, right_hand]:
 		for child in container.get_children():
 			child.queue_free()
+	for slot_name in ["NorthSlot", "WestSlot", "EastSlot", "SouthSlot"]:
+		var slot := trick_area.get_node_or_null(slot_name)
+		if slot != null:
+			for child in slot.get_children():
+				child.queue_free()
 	_selected_card = null
 	_current_valid_cards.clear()
 	trump_label.text = "Trump: —"
