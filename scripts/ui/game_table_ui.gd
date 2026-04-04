@@ -12,6 +12,7 @@ extends Control
 
 const CardScene := preload("res://scenes/card.tscn")
 const TrumpSelectorScene := preload("res://scenes/ui/trump_selector.tscn")
+const WinScreenScene := preload("res://scenes/ui/win_screen.tscn")
 
 var _selected_card: Card = null
 var _current_valid_cards: Array[Card] = []
@@ -23,6 +24,9 @@ func _ready() -> void:
 	_trump_selector_overlay = TrumpSelectorScene.instantiate()
 	_trump_selector_overlay.visible = false
 	add_child(_trump_selector_overlay)
+	_win_screen_overlay = WinScreenScene.instantiate()
+	_win_screen_overlay.visible = false
+	add_child(_win_screen_overlay)
 	GameState.start_session()
 
 func _connect_signals() -> void:

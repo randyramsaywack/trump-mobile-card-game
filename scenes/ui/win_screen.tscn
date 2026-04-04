@@ -1,0 +1,55 @@
+[gd_scene load_steps=2 format=3 uid="uid://winscreen"]
+
+[ext_resource type="Script" path="res://scripts/ui/win_screen_ui.gd" id="1_winscreen"]
+
+[node name="WinScreen" type="Control"]
+script = ExtResource("1_winscreen")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.8)
+
+[node name="ResultLabel" type="Label" parent="."]
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.3
+anchor_right = 0.9
+anchor_bottom = 0.45
+text = "Result"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SessionLabel" type="Label" parent="."]
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.48
+anchor_right = 0.9
+anchor_bottom = 0.58
+text = "Session — You: 0 | Opponents: 0"
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.15
+anchor_top = 0.62
+anchor_right = 0.85
+anchor_bottom = 0.72
+alignment = 1
+
+[node name="NextRoundBtn" type="Button" parent="Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Next Round"
+custom_minimum_size = Vector2(120, 48)
+
+[node name="MainMenuBtn" type="Button" parent="Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Main Menu"
+custom_minimum_size = Vector2(120, 48)
