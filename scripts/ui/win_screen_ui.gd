@@ -23,4 +23,6 @@ func _on_next_round() -> void:
 	GameState.start_next_round()
 
 func _on_main_menu() -> void:
-	get_tree().reload_current_scene()
+	var err := get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	if err != OK:
+		push_error("WinScreen: failed to load main_menu.tscn, error: %d" % err)
