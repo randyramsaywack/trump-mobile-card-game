@@ -77,5 +77,5 @@ text = "Single Player"
 layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(0, 52)
-text = "Multiplayer  (coming soon)"
+text = "Multiplayer (coming soon)"
 disabled = true

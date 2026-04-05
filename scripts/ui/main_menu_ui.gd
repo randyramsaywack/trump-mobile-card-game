@@ -8,4 +8,6 @@ func _ready() -> void:
 	multiplayer_btn.disabled = true
 
 func _on_single_player() -> void:
-	get_tree().change_scene_to_file("res://scenes/game_table.tscn")
+	var err := get_tree().change_scene_to_file("res://scenes/game_table.tscn")
+	if err != OK:
+		push_error("MainMenu: failed to load game_table.tscn, error: %d" % err)
