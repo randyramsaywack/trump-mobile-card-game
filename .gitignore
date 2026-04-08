@@ -7,7 +7,6 @@
 *.apk.idsig
 *.pck
 *.zip
-export_presets.cfg
 
 # iOS export
 *.xcframework/
