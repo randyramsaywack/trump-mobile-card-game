@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://card_scene"]
+[gd_scene load_steps=4 format=3 uid="uid://card_scene"]
 
 [ext_resource type="Script" path="res://scripts/ui/card_ui.gd" id="1_card_ui"]
 
@@ -8,47 +8,71 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.78, 0.78, 0.78, 1)
+border_color = Color(0.8, 0.8, 0.8, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back"]
+bg_color = Color(0.102, 0.102, 0.29, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.788, 0.659, 0.298, 1)
 corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-shadow_color = Color(0, 0, 0, 0.18)
-shadow_size = 3
-shadow_offset = Vector2(1, 2)
 
 [node name="CardUI" type="PanelContainer"]
 script = ExtResource("1_card_ui")
 custom_minimum_size = Vector2(52, 78)
 theme_override_styles/panel = SubResource("StyleBoxFlat_face")
 
-[node name="BackContent" type="ColorRect" parent="."]
+[node name="BackContent" type="PanelContainer" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.1, 0.22, 0.42, 1)
+mouse_filter = 2
 visible = false
+theme_override_styles/panel = SubResource("StyleBoxFlat_back")
+
+[node name="BackPattern" type="Label" parent="BackContent"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+text = "♦"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 0.85)
 
 [node name="FaceContent" type="Control" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+mouse_filter = 2
 
 [node name="TopRank" type="Label" parent="FaceContent"]
-offset_left = 3.0
-offset_top = 3.0
+offset_left = 4.0
+offset_top = 2.0
 offset_right = 30.0
-offset_bottom = 20.0
+offset_bottom = 18.0
 text = "A"
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 
 [node name="TopSuit" type="Label" parent="FaceContent"]
-offset_left = 3.0
-offset_top = 17.0
-offset_right = 25.0
+offset_left = 4.0
+offset_top = 16.0
+offset_right = 26.0
 offset_bottom = 30.0
 text = "♠"
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 11
 
 [node name="CenterSuit" type="Label" parent="FaceContent"]
 anchors_preset = 15
@@ -57,4 +81,30 @@ anchor_bottom = 1.0
 text = "♠"
 horizontal_alignment = 1
 vertical_alignment = 1
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 28
+
+[node name="BottomRank" type="Label" parent="FaceContent"]
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -30.0
+offset_top = -20.0
+offset_right = -4.0
+offset_bottom = -4.0
+text = "A"
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 14
+
+[node name="BottomSuit" type="Label" parent="FaceContent"]
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -26.0
+offset_top = -34.0
+offset_right = -4.0
+offset_bottom = -20.0
+text = "♠"
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 11

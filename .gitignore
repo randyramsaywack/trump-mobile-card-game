@@ -1,0 +1,23 @@
+# Godot
+.godot/
+*.import
+
+# Build artifacts
+*.apk
+*.apk.idsig
+*.pck
+*.zip
+export_presets.cfg
+
+# iOS export
+*.xcframework/
+*.xcodeproj/
+Trump/
+PrivacyInfo.xcprivacy
+
+# Screenshots
+screenshots/
+
+# Claude / Superpowers
+.claude/
+.superpowers/

@@ -1,6 +1,36 @@
-[gd_scene load_steps=2 format=3 uid="uid://mainmenu"]
+[gd_scene load_steps=4 format=3 uid="uid://mainmenu"]
 
 [ext_resource type="Script" path="res://scripts/ui/main_menu_ui.gd" id="1_mainmenu"]
+
+[sub_resource type="StyleBoxFlat" id="SB_btn_normal"]
+bg_color = Color(0.08, 0.19, 0.12, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.788, 0.659, 0.298, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 3
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="SB_btn_hover"]
+bg_color = Color(0.13, 0.3, 0.19, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.82, 0.38, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 3
+shadow_offset = Vector2(0, 2)
 
 [node name="MainMenu" type="Control"]
 script = ExtResource("1_mainmenu")
@@ -12,22 +42,26 @@ anchor_bottom = 1.0
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.13, 0.35, 0.24, 1)
+color = Color(0.102, 0.29, 0.18, 1)
 
 [node name="CenterLayout" type="VBoxContainer" parent="."]
 anchor_left = 0.1
-anchor_top = 0.15
+anchor_top = 0.12
 anchor_right = 0.9
-anchor_bottom = 0.9
-theme_override_constants/separation = 16
+anchor_bottom = 0.92
+theme_override_constants/separation = 18
 
 [node name="TitleLabel" type="Label" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
 text = "TRUMP"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 52
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 64
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 3
+theme_override_constants/shadow_outline_size = 0
 
 [node name="SubtitleLabel" type="Label" parent="CenterLayout"]
 layout_mode = 2
@@ -35,47 +69,126 @@ size_flags_horizontal = 4
 text = "CARD GAME"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 13
-theme_override_colors/font_color = Color(1, 1, 1, 0.65)
+theme_override_colors/font_color = Color(1, 1, 1, 0.6)
 
 [node name="SuitRow" type="HBoxContainer" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
 alignment = 1
-theme_override_constants/separation = 20
+theme_override_constants/separation = 22
 
 [node name="Spades" type="Label" parent="CenterLayout/SuitRow"]
 layout_mode = 2
 text = "♠"
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(1, 1, 1, 0.45)
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 1, 1, 0.5)
 
 [node name="Hearts" type="Label" parent="CenterLayout/SuitRow"]
 layout_mode = 2
 text = "♥"
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(1, 0.38, 0.38, 0.55)
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.753, 0.224, 0.169, 0.85)
 
 [node name="Diamonds" type="Label" parent="CenterLayout/SuitRow"]
 layout_mode = 2
 text = "♦"
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(1, 0.38, 0.38, 0.55)
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.753, 0.224, 0.169, 0.85)
 
 [node name="Clubs" type="Label" parent="CenterLayout/SuitRow"]
 layout_mode = 2
 text = "♣"
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(1, 1, 1, 0.45)
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 1, 1, 0.5)
 
 [node name="SinglePlayerBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
-size_flags_horizontal = 3
-custom_minimum_size = Vector2(0, 52)
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(200, 60)
 text = "Single Player"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
+theme_override_styles/normal = SubResource("SB_btn_normal")
+theme_override_styles/hover = SubResource("SB_btn_hover")
+theme_override_styles/pressed = SubResource("SB_btn_hover")
+theme_override_styles/focus = SubResource("SB_btn_hover")
 
 [node name="MultiplayerBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
-size_flags_horizontal = 3
-custom_minimum_size = Vector2(0, 52)
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(200, 60)
 text = "Multiplayer (coming soon)"
 disabled = true
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 0.5)
+theme_override_colors/font_disabled_color = Color(0.788, 0.659, 0.298, 0.35)
+theme_override_styles/normal = SubResource("SB_btn_normal")
+theme_override_styles/disabled = SubResource("SB_btn_normal")
+theme_override_styles/hover = SubResource("SB_btn_hover")
+theme_override_styles/pressed = SubResource("SB_btn_hover")
+theme_override_styles/focus = SubResource("SB_btn_hover")
+
+[node name="OptionsBtn" type="Button" parent="CenterLayout"]
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(200, 60)
+text = "Options"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
+theme_override_styles/normal = SubResource("SB_btn_normal")
+theme_override_styles/hover = SubResource("SB_btn_hover")
+theme_override_styles/pressed = SubResource("SB_btn_hover")
+theme_override_styles/focus = SubResource("SB_btn_hover")
+
+[node name="StatsBtn" type="Button" parent="CenterLayout"]
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(200, 60)
+text = "Stats"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
+theme_override_styles/normal = SubResource("SB_btn_normal")
+theme_override_styles/hover = SubResource("SB_btn_hover")
+theme_override_styles/pressed = SubResource("SB_btn_hover")
+theme_override_styles/focus = SubResource("SB_btn_hover")
+
+[node name="HowToPlayBtn" type="Button" parent="CenterLayout"]
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(200, 60)
+text = "How to Play"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
+theme_override_styles/normal = SubResource("SB_btn_normal")
+theme_override_styles/hover = SubResource("SB_btn_hover")
+theme_override_styles/pressed = SubResource("SB_btn_hover")
+theme_override_styles/focus = SubResource("SB_btn_hover")
+
+[node name="CreditsBtn" type="Button" parent="CenterLayout"]
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(200, 60)
+text = "Credits"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
+theme_override_styles/normal = SubResource("SB_btn_normal")
+theme_override_styles/hover = SubResource("SB_btn_hover")
+theme_override_styles/pressed = SubResource("SB_btn_hover")
+theme_override_styles/focus = SubResource("SB_btn_hover")
+
+[node name="VersionLabel" type="Label" parent="."]
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -24.0
+offset_bottom = -4.0
+text = "v0.1.0"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 0.4)

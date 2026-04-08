@@ -1,0 +1,11 @@
+[gd_resource type="Theme" load_steps=4 format=3 uid="uid://main_theme_trump"]
+
+[ext_resource type="FontFile" uid="uid://bit55iotb45hs" path="res://assets/fonts/NotoSansSymbols-Regular.ttf" id="1_symbols"]
+[ext_resource type="FontFile" uid="uid://hbd8se4tfyul" path="res://assets/fonts/NotoSansSymbols2-Regular.ttf" id="2_symbols2"]
+
+[sub_resource type="FontVariation" id="FontVariation_chain"]
+base_font = ExtResource("1_symbols")
+fallbacks = Array[Font]([ExtResource("2_symbols2")])
+
+[resource]
+default_font = SubResource("FontVariation_chain")

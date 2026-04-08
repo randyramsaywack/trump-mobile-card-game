@@ -20,15 +20,25 @@ config/run/main_scene="res://scenes/main_menu.tscn"
 
 GameState="*res://autoloads/game_state.gd"
 NetworkState="*res://autoloads/network_state.gd"
+AudioManager="*res://autoloads/audio_manager.gd"
+Settings="*res://autoloads/settings.gd"
+SuitFont="*res://autoloads/suit_font.gd"
+StatsManager="*res://autoloads/stats_manager.gd"
 
 [display]
 
 window/size/viewport_width=390
 window/size/viewport_height=844
-window/size/resizable=false
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 window/handheld/orientation=1
+
+[gui]
+
+theme/custom="res://assets/theme/main_theme.tres"
 
 [rendering]
 
 renderer/rendering_method="mobile"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

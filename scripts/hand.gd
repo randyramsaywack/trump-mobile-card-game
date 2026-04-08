@@ -1,6 +1,20 @@
 class_name Hand
 
+## Suit ordering used by sort_hand() — left to right on display.
+const SUIT_SORT_ORDER: Array = [Card.Suit.HEARTS, Card.Suit.SPADES, Card.Suit.DIAMONDS, Card.Suit.CLUBS]
+
 var cards: Array[Card] = []
+
+## Sort cards in place by suit (HEARTS, SPADES, DIAMONDS, CLUBS) then by rank
+## ascending (2..Ace). Purely cosmetic — game logic never depends on order.
+func sort_hand() -> void:
+	cards.sort_custom(func(a: Card, b: Card) -> bool:
+		var sa := SUIT_SORT_ORDER.find(a.suit)
+		var sb := SUIT_SORT_ORDER.find(b.suit)
+		if sa != sb:
+			return sa < sb
+		return a.rank < b.rank
+	)
 
 func add_cards(new_cards: Array[Card]) -> void:
 	cards.append_array(new_cards)

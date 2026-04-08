@@ -1,0 +1,104 @@
+[gd_scene load_steps=5 format=3 uid="uid://how_to_play_overlay"]
+
+[ext_resource type="Script" path="res://scripts/ui/how_to_play_overlay.gd" id="1_htp"]
+
+[sub_resource type="StyleBoxFlat" id="SB_btn_normal"]
+bg_color = Color(0.08, 0.19, 0.12, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.788, 0.659, 0.298, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="SB_btn_hover"]
+bg_color = Color(0.13, 0.3, 0.19, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.82, 0.38, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 18.0
+content_margin_top = 16.0
+content_margin_right = 18.0
+content_margin_bottom = 16.0
+bg_color = Color(0.08, 0.19, 0.12, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.788, 0.659, 0.298, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 6
+shadow_offset = Vector2(0, 3)
+
+[node name="HowToPlayOverlay" type="Control"]
+script = ExtResource("1_htp")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 0
+
+[node name="Dim" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.55)
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchor_left = 0.05
+anchor_top = 0.08
+anchor_right = 0.95
+anchor_bottom = 0.92
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "How to Play"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_font_sizes/font_size = 22
+
+[node name="Scroll" type="ScrollContainer" parent="Panel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Body" type="RichTextLabel" parent="Panel/VBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+theme_override_colors/default_color = Color(0.92, 0.92, 0.92, 1)
+theme_override_font_sizes/normal_font_size = 13
+theme_override_font_sizes/bold_font_size = 14
+
+[node name="CloseButton" type="Button" parent="Panel/VBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(100, 36)
+text = "Close"
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
+theme_override_styles/normal = SubResource("SB_btn_normal")
+theme_override_styles/hover = SubResource("SB_btn_hover")
+theme_override_styles/pressed = SubResource("SB_btn_hover")
+theme_override_styles/focus = SubResource("SB_btn_hover")

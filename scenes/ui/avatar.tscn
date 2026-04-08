@@ -1,0 +1,79 @@
+[gd_scene load_steps=6 format=3 uid="uid://avatar_scene"]
+
+[ext_resource type="Script" path="res://scripts/ui/avatar.gd" id="1_avatar"]
+
+[sub_resource type="StyleBoxFlat" id="SB_border"]
+bg_color = Color(0.788, 0.659, 0.298, 1)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+
+[sub_resource type="StyleBoxFlat" id="SB_inner"]
+bg_color = Color(0.165, 0.165, 0.165, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[sub_resource type="StyleBoxFlat" id="SB_head"]
+bg_color = Color(0.533, 0.533, 0.533, 0.7)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="SB_body"]
+bg_color = Color(0.533, 0.533, 0.533, 0.7)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[node name="Avatar" type="VBoxContainer"]
+script = ExtResource("1_avatar")
+custom_minimum_size = Vector2(48, 0)
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="CircleBorder" type="PanelContainer" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(48, 48)
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("SB_border")
+
+[node name="CircleBG" type="PanelContainer" parent="CircleBorder"]
+layout_mode = 2
+custom_minimum_size = Vector2(44, 44)
+theme_override_styles/panel = SubResource("SB_inner")
+
+[node name="Silhouette" type="Control" parent="CircleBorder/CircleBG"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Head" type="PanelContainer" parent="CircleBorder/CircleBG/Silhouette"]
+offset_left = 16.0
+offset_top = 6.0
+offset_right = 28.0
+offset_bottom = 18.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("SB_head")
+
+[node name="Body" type="PanelContainer" parent="CircleBorder/CircleBG/Silhouette"]
+offset_left = 12.0
+offset_top = 19.0
+offset_right = 32.0
+offset_bottom = 35.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("SB_body")
+
+[node name="NameLabel" type="Label" parent="."]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 0.85)
+theme_override_font_sizes/font_size = 11

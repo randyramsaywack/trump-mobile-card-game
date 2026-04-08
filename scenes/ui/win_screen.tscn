@@ -1,6 +1,30 @@
-[gd_scene load_steps=2 format=3 uid="uid://winscreen"]
+[gd_scene load_steps=4 format=3 uid="uid://winscreen"]
 
 [ext_resource type="Script" path="res://scripts/ui/win_screen_ui.gd" id="1_winscreen"]
+
+[sub_resource type="StyleBoxFlat" id="SB_btn_normal"]
+bg_color = Color(0.08, 0.19, 0.12, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.788, 0.659, 0.298, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="SB_btn_hover"]
+bg_color = Color(0.13, 0.3, 0.19, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.82, 0.38, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [node name="WinScreen" type="Control"]
 script = ExtResource("1_winscreen")
@@ -8,48 +32,83 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 visible = false
+z_index = 200
 
 [node name="Background" type="ColorRect" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.8)
+color = Color(0, 0, 0, 0.7)
 
 [node name="ResultLabel" type="Label" parent="."]
 anchors_preset = -1
 anchor_left = 0.1
-anchor_top = 0.3
+anchor_top = 0.28
 anchor_right = 0.9
-anchor_bottom = 0.45
+anchor_bottom = 0.44
 text = "Result"
 horizontal_alignment = 1
 vertical_alignment = 1
+theme_override_font_sizes/font_size = 36
 
 [node name="SessionLabel" type="Label" parent="."]
 anchors_preset = -1
-anchor_left = 0.1
+anchor_left = 0.15
 anchor_top = 0.48
-anchor_right = 0.9
-anchor_bottom = 0.58
+anchor_right = 0.85
+anchor_bottom = 0.6
 text = "Session — You: 0 | Opponents: 0"
 horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 1, 1, 0.92)
 
-[node name="Buttons" type="HBoxContainer" parent="."]
+[node name="HistoryBtn" type="Button" parent="."]
 anchors_preset = -1
 anchor_left = 0.15
 anchor_top = 0.62
 anchor_right = 0.85
-anchor_bottom = 0.72
+anchor_bottom = 0.69
+text = "View Trick History"
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
+theme_override_styles/normal = SubResource("SB_btn_normal")
+theme_override_styles/hover = SubResource("SB_btn_hover")
+theme_override_styles/pressed = SubResource("SB_btn_hover")
+theme_override_styles/focus = SubResource("SB_btn_hover")
+
+[node name="Buttons" type="HBoxContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.73
+anchor_right = 0.9
+anchor_bottom = 0.85
 alignment = 1
+theme_override_constants/separation = 16
 
 [node name="NextRoundBtn" type="Button" parent="Buttons"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Next Round"
-custom_minimum_size = Vector2(120, 48)
+custom_minimum_size = Vector2(140, 56)
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
+theme_override_styles/normal = SubResource("SB_btn_normal")
+theme_override_styles/hover = SubResource("SB_btn_hover")
+theme_override_styles/pressed = SubResource("SB_btn_hover")
+theme_override_styles/focus = SubResource("SB_btn_hover")
 
 [node name="MainMenuBtn" type="Button" parent="Buttons"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Main Menu"
-custom_minimum_size = Vector2(120, 48)
+custom_minimum_size = Vector2(140, 56)
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
+theme_override_styles/normal = SubResource("SB_btn_normal")
+theme_override_styles/hover = SubResource("SB_btn_hover")
+theme_override_styles/pressed = SubResource("SB_btn_hover")
+theme_override_styles/focus = SubResource("SB_btn_hover")

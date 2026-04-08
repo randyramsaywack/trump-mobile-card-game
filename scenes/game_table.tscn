@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://gametable"]
+[gd_scene load_steps=3 format=3 uid="uid://gametable"]
 
 [ext_resource type="Script" path="res://scripts/ui/game_table_ui.gd" id="1_gametable"]
+[ext_resource type="PackedScene" uid="uid://avatar_scene" path="res://scenes/ui/avatar.tscn" id="2_avatar"]
 
 [node name="GameTable" type="Control"]
 script = ExtResource("1_gametable")
@@ -12,13 +13,33 @@ anchor_bottom = 1.0
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.18, 0.42, 0.31, 1)
+mouse_filter = 2
+color = Color(0.102, 0.29, 0.18, 1)
+
+[node name="TrumpWatermark" type="Label" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = -120.0
+offset_right = 120.0
+offset_bottom = 120.0
+mouse_filter = 2
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 180
+theme_override_colors/font_color = Color(1, 1, 1, 0.12)
+visible = false
 
 [node name="HUD" type="VBoxContainer" parent="."]
 anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 0.0
+offset_left = 6.0
+offset_right = -6.0
 offset_bottom = 48.0
 grow_vertical = 1
 
@@ -29,15 +50,34 @@ size_flags_vertical = 3
 [node name="TrumpLabel" type="Label" parent="HUD/HUDRow1"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
 text = "Trump: —"
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+clip_text = true
+text_overrun_behavior = 3
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_font_sizes/font_size = 16
 
 [node name="BooksLabel" type="Label" parent="HUD/HUDRow1"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Books — You: 0 | Opp: 0"
+text = "Books: 0–0"
 horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="HistoryButton" type="Button" parent="HUD/HUDRow1"]
+layout_mode = 2
+custom_minimum_size = Vector2(44, 44)
+text = "≡"
+theme_override_font_sizes/font_size = 18
+
+[node name="SettingsButton" type="Button" parent="HUD/HUDRow1"]
+layout_mode = 2
+custom_minimum_size = Vector2(44, 44)
+text = "⚙"
+theme_override_font_sizes/font_size = 18
 
 [node name="HUDRow2" type="HBoxContainer" parent="HUD"]
 layout_mode = 2
@@ -46,7 +86,9 @@ size_flags_vertical = 3
 [node name="SessionLabel" type="Label" parent="HUD/HUDRow2"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Session — You: 0 | Opp: 0"
+text = "Session: 0–0"
+clip_text = true
+text_overrun_behavior = 3
 theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
 theme_override_font_sizes/font_size = 11
 
@@ -55,6 +97,8 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "—'s turn"
 horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
 theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
 theme_override_font_sizes/font_size = 11
 
@@ -65,17 +109,14 @@ text = ""
 theme_override_font_sizes/font_size = 11
 visible = false
 
-[node name="NorthName" type="Label" parent="."]
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 1.0
-anchor_bottom = 0.0
+[node name="NorthAvatar" parent="." instance=ExtResource("2_avatar")]
+anchors_preset = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -24.0
 offset_top = 48.0
-offset_bottom = 66.0
-text = "North"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(1, 1, 1, 0.7)
-theme_override_font_sizes/font_size = 11
+offset_right = 24.0
+offset_bottom = 114.0
 
 [node name="TopHand" type="HBoxContainer" parent="."]
 anchor_left = 0.0
@@ -84,7 +125,8 @@ anchor_right = 1.0
 anchor_bottom = 0.0
 offset_top = 66.0
 offset_bottom = 112.0
-theme_override_constants/separation = -18
+alignment = 1
+theme_override_constants/separation = -14
 
 [node name="MidRow" type="HBoxContainer" parent="."]
 anchor_left = 0.0
@@ -98,7 +140,8 @@ offset_bottom = -112.0
 layout_mode = 2
 custom_minimum_size = Vector2(26, 0)
 size_flags_vertical = 3
-theme_override_constants/separation = -28
+alignment = 1
+theme_override_constants/separation = -20
 
 [node name="TrickArea" type="Control" parent="MidRow"]
 layout_mode = 2
@@ -107,61 +150,93 @@ size_flags_vertical = 3
 
 [node name="NorthSlot" type="Control" parent="MidRow/TrickArea"]
 anchor_left = 0.5
-anchor_top = 0.0
+anchor_top = 0.5
 anchor_right = 0.5
-anchor_bottom = 0.0
+anchor_bottom = 0.5
 offset_left = -26.0
-offset_top = 4.0
+offset_top = -79.0
 offset_right = 26.0
-offset_bottom = 82.0
+offset_bottom = -1.0
 
 [node name="WestSlot" type="Control" parent="MidRow/TrickArea"]
-anchor_left = 0.0
+anchor_left = 0.5
 anchor_top = 0.5
-anchor_right = 0.0
+anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 4.0
+offset_left = -66.0
 offset_top = -39.0
-offset_right = 56.0
+offset_right = -14.0
 offset_bottom = 39.0
 
 [node name="EastSlot" type="Control" parent="MidRow/TrickArea"]
-anchor_left = 1.0
+anchor_left = 0.5
 anchor_top = 0.5
-anchor_right = 1.0
+anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -56.0
+offset_left = 14.0
 offset_top = -39.0
-offset_right = -4.0
+offset_right = 66.0
 offset_bottom = 39.0
 
 [node name="SouthSlot" type="Control" parent="MidRow/TrickArea"]
 anchor_left = 0.5
-anchor_top = 1.0
+anchor_top = 0.5
 anchor_right = 0.5
-anchor_bottom = 1.0
+anchor_bottom = 0.5
 offset_left = -26.0
-offset_top = -82.0
+offset_top = 1.0
 offset_right = 26.0
-offset_bottom = -4.0
+offset_bottom = 79.0
 
 [node name="RightHand" type="VBoxContainer" parent="MidRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(26, 0)
 size_flags_vertical = 3
-theme_override_constants/separation = -28
+alignment = 1
+theme_override_constants/separation = -20
 
-[node name="SouthName" type="Label" parent="."]
+[node name="WestAvatar" parent="." instance=ExtResource("2_avatar")]
+anchors_preset = 0
+offset_left = 4.0
+offset_top = 112.0
+offset_right = 52.0
+offset_bottom = 178.0
+
+[node name="EastAvatar" parent="." instance=ExtResource("2_avatar")]
+anchors_preset = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -52.0
+offset_top = 112.0
+offset_right = -4.0
+offset_bottom = 178.0
+
+[node name="SouthAvatar" parent="." instance=ExtResource("2_avatar")]
+anchors_preset = 0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -24.0
+offset_top = -130.0
+offset_right = 24.0
+offset_bottom = -64.0
+
+[node name="Toast" type="Label" parent="."]
 anchor_left = 0.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -112.0
-offset_bottom = -94.0
-text = "You"
+offset_top = -150.0
+offset_bottom = -130.0
+mouse_filter = 2
+text = ""
 horizontal_alignment = 1
-theme_override_colors/font_color = Color(1, 1, 1, 0.7)
-theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.95, 0.82, 0.38, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.7)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 14
+visible = false
 
 [node name="BottomHand" type="HBoxContainer" parent="."]
 anchor_left = 0.0
@@ -169,4 +244,5 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = -94.0
-theme_override_constants/separation = -36
+alignment = 1
+theme_override_constants/separation = -32
