@@ -4,12 +4,16 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
 
+    integrations:
+      app_store_connect: Codemagic
     environment:
       ios_signing:
         distribution_type: development
         bundle_identifier: com.randyland.trumpcardgame
       vars:
         GODOT_VERSION: "4.6.2"
+        BUNDLE_ID: "com.randyland.trumpcardgame"
+        APP_STORE_CONNECT_TEAM_ID: "LXHNJ6Y83Z"
       xcode: latest
 
     triggering:
@@ -50,6 +54,9 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_DEVELOPMENT --create
+          keychain add-certificates
+          xcode-project use-profiles
 
       - name: Build with xcodebuild
         script: |
