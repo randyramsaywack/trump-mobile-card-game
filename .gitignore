@@ -8,11 +8,11 @@
 *.pck
 *.zip
 
-# iOS export
-*.xcframework/
-*.xcodeproj/
-Trump/
-PrivacyInfo.xcprivacy
+# iOS build output (keep Xcode project sources)
+*.ipa
+# Large static libraries from Godot export templates (downloaded by CI)
+Trump.xcframework/
+MoltenVK.xcframework/
 
 # Screenshots
 screenshots/

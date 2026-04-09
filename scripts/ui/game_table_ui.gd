@@ -27,9 +27,9 @@ const WinScreenScene := preload("res://scenes/ui/win_screen.tscn")
 const SettingsOverlayScene := preload("res://scenes/ui/settings_overlay.tscn")
 const HistoryOverlayScene := preload("res://scenes/ui/history_overlay.tscn")
 
-# Watermark colors per suit — 12% alpha so the symbol is visible but not distracting.
-const WATERMARK_RED := Color(0.75, 0.22, 0.17, 0.12)
-const WATERMARK_BLACK := Color(0.08, 0.08, 0.08, 0.13)
+# Watermark colors per suit.
+const WATERMARK_RED := Color(0.75, 0.22, 0.17, 0.25)
+const WATERMARK_BLACK := Color(0.08, 0.08, 0.08, 0.26)
 
 # Sort button colors — gold when on, dim grey when off.
 
