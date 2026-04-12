@@ -13,6 +13,10 @@
 
 # iOS build output (keep Xcode project sources)
 *.ipa
+build/
+Trump.xcodeproj/project.xcworkspace/xcuserdata/
+Trump.xcodeproj/project.xcworkspace/xcshareddata/
+.DS_Store
 # Large static libraries from Godot export templates (downloaded by CI)
 Trump.xcframework/
 MoltenVK.xcframework/
