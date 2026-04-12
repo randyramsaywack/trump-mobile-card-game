@@ -38,3 +38,61 @@ func _clear_room() -> void:
 	is_host = false
 	players = []
 	room_state_changed.emit()
+
+# ── Client transport ──────────────────────────────────────────────────────────
+
+var _client_peer: ENetMultiplayerPeer = null
+
+## Start connecting to the dedicated server. Safe to call repeatedly — a
+## second call while already CONNECTED or CONNECTING is a no-op.
+func connect_to_server(username: String) -> void:
+	if connection_state == ConnectionState.CONNECTED \
+			or connection_state == ConnectionState.CONNECTING \
+			or connection_state == ConnectionState.IN_ROOM:
+		return
+	local_username = username
+	_client_peer = ENetMultiplayerPeer.new()
+	var err := _client_peer.create_client(Protocol.SERVER_HOST, Protocol.SERVER_PORT)
+	if err != OK:
+		push_warning("NetworkState: create_client failed err=%d" % err)
+		_client_peer = null
+		_set_connection_state(ConnectionState.DISCONNECTED)
+		error_received.emit("CONNECT_FAILED", "Server unavailable")
+		return
+	_set_connection_state(ConnectionState.CONNECTING)
+
+func disconnect_from_server() -> void:
+	if _client_peer != null:
+		_client_peer.close()
+		_client_peer = null
+	_clear_room()
+	_set_connection_state(ConnectionState.DISCONNECTED)
+
+func send(msg: Dictionary) -> void:
+	if _client_peer == null:
+		return
+	_client_peer.set_target_peer(MultiplayerPeer.TARGET_PEER_SERVER)
+	_client_peer.put_packet(var_to_bytes(msg))
+
+func _process(_delta: float) -> void:
+	if _client_peer == null:
+		return
+	_client_peer.poll()
+	var status := _client_peer.get_connection_status()
+	if status == MultiplayerPeer.CONNECTION_DISCONNECTED:
+		if connection_state != ConnectionState.DISCONNECTED:
+			_client_peer = null
+			_clear_room()
+			_set_connection_state(ConnectionState.DISCONNECTED)
+			error_received.emit("DISCONNECTED", "Disconnected from server")
+		return
+	if status == MultiplayerPeer.CONNECTION_CONNECTED and connection_state == ConnectionState.CONNECTING:
+		_set_connection_state(ConnectionState.CONNECTED)
+		# Kick off the handshake as soon as we're connected.
+		send(Protocol.msg(Protocol.MSG_HELLO, {"username": local_username}))
+	while _client_peer != null and _client_peer.get_available_packet_count() > 0:
+		var bytes := _client_peer.get_packet()
+		var msg = bytes_to_var(bytes)
+		if typeof(msg) != TYPE_DICTIONARY:
+			continue
+		_handle_server_message(msg)
