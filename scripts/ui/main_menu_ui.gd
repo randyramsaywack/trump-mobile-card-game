@@ -35,11 +35,11 @@ func _ready() -> void:
 	SuitFont.apply(diamonds_suit)
 	SuitFont.apply(clubs_suit)
 	single_player_btn.pressed.connect(_on_single_player)
+	multiplayer_btn.pressed.connect(_on_multiplayer)
 	options_btn.pressed.connect(_on_options)
 	stats_btn.pressed.connect(_on_stats)
 	how_to_play_btn.pressed.connect(_on_how_to_play)
 	credits_btn.pressed.connect(_on_credits)
-	multiplayer_btn.disabled = true
 
 ## Android hardware back button. Closes any open overlay, otherwise quits.
 func _notification(what: int) -> void:
@@ -63,6 +63,11 @@ func _on_single_player() -> void:
 	var err := get_tree().change_scene_to_file("res://scenes/game_table.tscn")
 	if err != OK:
 		push_error("MainMenu: failed to load game_table.tscn, error: %d" % err)
+
+func _on_multiplayer() -> void:
+	var err := get_tree().change_scene_to_file("res://scenes/ui/multiplayer_menu.tscn")
+	if err != OK:
+		push_error("MainMenu: failed to load multiplayer_menu.tscn, error: %d" % err)
 
 func _on_options() -> void:
 	if _settings_overlay == null:
