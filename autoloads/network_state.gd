@@ -87,9 +87,13 @@ func _process(_delta: float) -> void:
 			error_received.emit("DISCONNECTED", "Disconnected from server")
 		return
 	if status == MultiplayerPeer.CONNECTION_CONNECTED and connection_state == ConnectionState.CONNECTING:
-		_set_connection_state(ConnectionState.CONNECTED)
-		# Kick off the handshake as soon as we're connected.
+		# Queue HELLO BEFORE emitting CONNECTED. The signal handler runs
+		# synchronously and may enqueue follow-up messages (create_room,
+		# join_room). Those would otherwise land on the server before HELLO
+		# and be dropped by the "registered peer" gate — forcing the user to
+		# click Create/Join twice for the first action to stick.
 		send(Protocol.msg(Protocol.MSG_HELLO, {"username": local_username}))
+		_set_connection_state(ConnectionState.CONNECTED)
 	while _client_peer != null and _client_peer.get_available_packet_count() > 0:
 		var bytes := _client_peer.get_packet()
 		var msg = bytes_to_var(bytes)
