@@ -47,11 +47,9 @@ func handle_create_room(peer_id: int) -> Array:
 	_rooms[room.code] = room
 	var entry := room.add_player(peer_id, get_username(peer_id))
 	_peer_to_room[peer_id] = room.code
-	var out: Array = []
-	out.append([peer_id, _room_joined_msg(room, entry)])
-	# Broadcast room_state too so the new host has a consistent view.
-	out.append_array(_broadcast_room_state(room))
-	return out
+	# Only the creator is in the room — ROOM_JOINED carries the full snapshot,
+	# so there is no one to broadcast ROOM_STATE to.
+	return [[peer_id, _room_joined_msg(room, entry)]]
 
 # ── join_room ─────────────────────────────────────────────────────────────────
 
@@ -69,13 +67,18 @@ func handle_join_room(peer_id: int, data: Dictionary) -> Array:
 	var room: Room = _rooms.get(code, null)
 	if room == null:
 		return [_err_to(peer_id, Protocol.ERR_ROOM_NOT_FOUND)]
+	if room.state != Room.State.WAITING:
+		return [_err_to(peer_id, Protocol.ERR_ROOM_STARTED)]
 	if room.is_full():
 		return [_err_to(peer_id, Protocol.ERR_ROOM_FULL)]
 	var entry := room.add_player(peer_id, get_username(peer_id))
 	_peer_to_room[peer_id] = room.code
 	var out: Array = []
+	# The joiner gets a full snapshot via ROOM_JOINED; existing members need
+	# a ROOM_STATE broadcast so their seat list updates. Excluding the joiner
+	# from the broadcast avoids a redundant back-to-back render on their end.
 	out.append([peer_id, _room_joined_msg(room, entry)])
-	out.append_array(_broadcast_room_state(room))
+	out.append_array(_broadcast_room_state(room, peer_id))
 	return out
 
 # ── leave_room ────────────────────────────────────────────────────────────────
@@ -132,11 +135,14 @@ func _remove_peer_from_room(peer_id: int, room: Room) -> Array:
 	out.append_array(_broadcast_room_state(room))
 	return out
 
-func _broadcast_room_state(room: Room) -> Array:
+func _broadcast_room_state(room: Room, exclude_peer_id: int = -1) -> Array:
 	var msg := Protocol.msg(Protocol.MSG_ROOM_STATE, room.to_state_dict())
 	var out: Array = []
 	for p in room.players:
-		out.append([int(p["peer_id"]), msg])
+		var pid := int(p["peer_id"])
+		if pid == exclude_peer_id:
+			continue
+		out.append([pid, msg])
 	return out
 
 func _room_joined_msg(room: Room, entry: Dictionary) -> Dictionary:

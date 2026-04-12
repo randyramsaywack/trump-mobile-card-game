@@ -27,6 +27,7 @@ const ERR_NOT_HOST := "NOT_HOST"
 const ERR_NOT_IN_ROOM := "NOT_IN_ROOM"
 const ERR_HOST_LEFT := "HOST_LEFT"
 const ERR_ALREADY_IN_ROOM := "ALREADY_IN_ROOM"
+const ERR_ROOM_STARTED := "ROOM_STARTED"
 
 # ── Error messages (human-readable) ───────────────────────────────────────────
 const ERROR_MESSAGES := {
@@ -37,6 +38,7 @@ const ERROR_MESSAGES := {
 	ERR_NOT_IN_ROOM: "You must join a room first.",
 	ERR_HOST_LEFT: "Host left the room.",
 	ERR_ALREADY_IN_ROOM: "You are already in a room.",
+	ERR_ROOM_STARTED: "Game already in progress.",
 }
 
 # ── Transport ─────────────────────────────────────────────────────────────────
