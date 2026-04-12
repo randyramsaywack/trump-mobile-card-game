@@ -1,11 +1,7 @@
 extends PanelContainer
 
-@onready var face_content: Control = $FaceContent
-@onready var top_rank: Label = $FaceContent/TopRank
-@onready var top_suit: Label = $FaceContent/TopSuit
-@onready var center_suit: Label = $FaceContent/CenterSuit
-@onready var bottom_rank: Label = $FaceContent/BottomRank
-@onready var bottom_suit: Label = $FaceContent/BottomSuit
+@onready var face_margin: MarginContainer = $FaceMargin
+@onready var face_texture: TextureRect = $FaceMargin/FaceTexture
 @onready var back_content: PanelContainer = $BackContent
 
 var card_data: Card = null
@@ -18,17 +14,46 @@ signal card_tapped(card: Card)
 signal card_play_requested(card: Card)
 
 # --- Visual constants ---
-const COLOR_SUIT_RED := Color(0.753, 0.224, 0.169)       # #c0392b
-const COLOR_SUIT_BLACK := Color(0.102, 0.102, 0.102)     # #1a1a1a
-const COLOR_CARD_BG := Color(1, 1, 1, 1)                 # #ffffff
-const COLOR_CARD_BORDER := Color(0.8, 0.8, 0.8, 1)       # #cccccc
-const COLOR_GOLD := Color(0.788, 0.659, 0.298)           # #c9a84c
+const COLOR_CARD_BG := Color(1, 1, 1, 1)
+const COLOR_CARD_BORDER := Color(0.8, 0.8, 0.8, 1)
+const COLOR_GOLD := Color(0.788, 0.659, 0.298)
 const COLOR_SHADOW := Color(0, 0, 0, 0.4)
 const CORNER_RADIUS := 8
 const BORDER_VALID := 3
 const BORDER_SELECTED := 4
 const INVALID_ALPHA := 0.5
 const SELECT_RAISE_PX := 15.0
+
+# SVG card face textures keyed by "rank_of_suit" filename stem.
+static var _card_textures: Dictionary = {}
+static var _textures_loaded: bool = false
+
+const RANK_FILE_NAMES: Dictionary = {
+	Card.Rank.ACE: "ace", Card.Rank.TWO: "2", Card.Rank.THREE: "3",
+	Card.Rank.FOUR: "4", Card.Rank.FIVE: "5", Card.Rank.SIX: "6",
+	Card.Rank.SEVEN: "7", Card.Rank.EIGHT: "8", Card.Rank.NINE: "9",
+	Card.Rank.TEN: "10", Card.Rank.JACK: "jack", Card.Rank.QUEEN: "queen",
+	Card.Rank.KING: "king",
+}
+const SUIT_FILE_NAMES: Dictionary = {
+	Card.Suit.SPADES: "spades", Card.Suit.HEARTS: "hearts",
+	Card.Suit.DIAMONDS: "diamonds", Card.Suit.CLUBS: "clubs",
+}
+
+static func _ensure_textures_loaded() -> void:
+	if _textures_loaded:
+		return
+	_textures_loaded = true
+	for rank in RANK_FILE_NAMES:
+		for suit in SUIT_FILE_NAMES:
+			var key := "%s_of_%s" % [RANK_FILE_NAMES[rank], SUIT_FILE_NAMES[suit]]
+			var path := "res://assets/cards/%s.png" % key
+			_card_textures[key] = load(path)
+
+static func get_card_texture(card: Card) -> Texture2D:
+	_ensure_textures_loaded()
+	var key := "%s_of_%s" % [RANK_FILE_NAMES[card.rank], SUIT_FILE_NAMES[card.suit]]
+	return _card_textures.get(key)
 
 const DOUBLE_TAP_MS := 350
 const DRAG_UP_THRESHOLD := 50.0
@@ -57,10 +82,7 @@ func set_face_up(face_up: bool) -> void:
 		_apply_display()
 
 func _ready() -> void:
-	# Safety net: ensure suit glyphs render on all platforms.
-	SuitFont.apply(top_suit)
-	SuitFont.apply(center_suit)
-	SuitFont.apply(bottom_suit)
+	_ensure_textures_loaded()
 	_build_face_styles()
 	# Show back even when card_data is null (e.g. shuffle animation placeholders)
 	if card_data != null or not _face_up:
@@ -90,21 +112,14 @@ func _apply_display() -> void:
 		_show_back()
 
 func _show_face() -> void:
-	face_content.visible = true
+	face_margin.visible = true
 	back_content.visible = false
-	var color := COLOR_SUIT_RED if card_data.suit in [Card.Suit.HEARTS, Card.Suit.DIAMONDS] else COLOR_SUIT_BLACK
-	var rank_text: String = Card.RANK_NAMES[card_data.rank]
-	var suit_text: String = Card.SUIT_SYMBOLS[card_data.suit]
-	top_rank.text = rank_text
-	top_suit.text = suit_text
-	center_suit.text = suit_text
-	bottom_rank.text = rank_text
-	bottom_suit.text = suit_text
-	for lbl in [top_rank, top_suit, center_suit, bottom_rank, bottom_suit]:
-		lbl.add_theme_color_override("font_color", color)
+	var tex := get_card_texture(card_data)
+	if tex != null:
+		face_texture.texture = tex
 
 func _show_back() -> void:
-	face_content.visible = false
+	face_margin.visible = false
 	back_content.visible = true
 
 func set_valid(valid: bool) -> void:
