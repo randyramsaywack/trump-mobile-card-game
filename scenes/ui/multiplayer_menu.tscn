@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://multiplayermenu"]
+[gd_scene format=3 uid="uid://qdguli7pojcg"]
 
 [ext_resource type="Script" path="res://scripts/ui/multiplayer_menu_ui.gd" id="1_mp_menu"]
 

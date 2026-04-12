@@ -18,13 +18,13 @@ config/run/main_scene="res://scenes/main_menu.tscn"
 
 [autoload]
 
-Bootstrap="*res://scripts/bootstrap.gd"
 GameState="*res://autoloads/game_state.gd"
 NetworkState="*res://autoloads/network_state.gd"
 AudioManager="*res://autoloads/audio_manager.gd"
 Settings="*res://autoloads/settings.gd"
 SuitFont="*res://autoloads/suit_font.gd"
 StatsManager="*res://autoloads/stats_manager.gd"
+Bootstrap="*res://scripts/bootstrap.gd"
 
 [display]
 

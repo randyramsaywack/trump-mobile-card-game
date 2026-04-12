@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://roomwaiting"]
+[gd_scene format=3 uid="uid://roomwaiting"]
 
 [ext_resource type="Script" path="res://scripts/ui/room_waiting_ui.gd" id="1_room_wait"]
 
