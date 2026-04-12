@@ -96,3 +96,63 @@ func _process(_delta: float) -> void:
 		if typeof(msg) != TYPE_DICTIONARY:
 			continue
 		_handle_server_message(msg)
+
+# ── Room actions (UI facade) ──────────────────────────────────────────────────
+
+func create_room() -> void:
+	send(Protocol.msg(Protocol.MSG_CREATE_ROOM))
+
+func join_room(code: String) -> void:
+	send(Protocol.msg(Protocol.MSG_JOIN_ROOM, {"code": code.to_upper()}))
+
+func leave_room() -> void:
+	if connection_state != ConnectionState.IN_ROOM:
+		return
+	send(Protocol.msg(Protocol.MSG_LEAVE_ROOM))
+	_clear_room()
+	_set_connection_state(ConnectionState.CONNECTED)
+
+func start_game() -> void:
+	if not is_host:
+		return
+	send(Protocol.msg(Protocol.MSG_START_GAME))
+
+# ── Incoming server messages ──────────────────────────────────────────────────
+
+func _handle_server_message(msg: Dictionary) -> void:
+	var type := String(msg.get("type", ""))
+	var data := msg.get("data", {}) as Dictionary
+	match type:
+		Protocol.MSG_WELCOME:
+			local_peer_id = int(data.get("peer_id", 0))
+		Protocol.MSG_ROOM_JOINED:
+			room_code = String(data.get("code", ""))
+			players = (data.get("players", []) as Array).duplicate(true)
+			local_seat = int(data.get("your_seat", -1))
+			var host_id := int(data.get("host_id", 0))
+			is_host = host_id == local_peer_id
+			_set_connection_state(ConnectionState.IN_ROOM)
+			room_state_changed.emit()
+		Protocol.MSG_ROOM_STATE:
+			room_code = String(data.get("code", room_code))
+			players = (data.get("players", []) as Array).duplicate(true)
+			var host_id2 := int(data.get("host_id", 0))
+			is_host = host_id2 == local_peer_id
+			# Recompute local_seat from players list in case it changed.
+			for p in players:
+				if int(p["peer_id"]) == local_peer_id:
+					local_seat = int(p["seat"])
+					break
+			room_state_changed.emit()
+		Protocol.MSG_ERROR:
+			var code := String(data.get("code", ""))
+			var message := String(data.get("message", ""))
+			last_error_code = code
+			if code == Protocol.ERR_HOST_LEFT:
+				_clear_room()
+				_set_connection_state(ConnectionState.CONNECTED)
+			error_received.emit(code, message)
+		Protocol.MSG_GAME_STARTING:
+			game_starting.emit()
+		_:
+			push_warning("NetworkState: unknown server msg type=%s" % type)
