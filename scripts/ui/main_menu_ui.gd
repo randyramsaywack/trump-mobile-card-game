@@ -25,6 +25,8 @@ var _credits_overlay: Control = null
 
 func _ready() -> void:
 	# Load decorative fonts via raw bytes to bypass Godot's broken fontdata import (4.6.x).
+	# The .ttf files use the "keep" importer (see .import sidecars) so the raw
+	# bytes are bundled as-is in the exported PCK.
 	_apply_raw_font(title_label, "res://assets/fonts/raw/CinzelDecorative-Bold.ttf")
 	_apply_raw_font(subtitle_label, "res://assets/fonts/raw/Cinzel-Bold.ttf")
 	# Safety net: ensure suit glyphs render on all platforms.

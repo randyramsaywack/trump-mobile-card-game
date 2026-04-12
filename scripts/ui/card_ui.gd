@@ -55,7 +55,7 @@ static func get_card_texture(card: Card) -> Texture2D:
 	var key := "%s_of_%s" % [RANK_FILE_NAMES[card.rank], SUIT_FILE_NAMES[card.suit]]
 	return _card_textures.get(key)
 
-const DOUBLE_TAP_MS := 350
+const DOUBLE_TAP_MS := 400
 const DRAG_UP_THRESHOLD := 50.0
 const REORDER_THRESHOLD := 20.0
 
@@ -64,6 +64,8 @@ var _drag_start_x_global: float = 0.0
 var _drag_start_y_global: float = 0.0
 var _drag_active: bool = false
 var _reorder_active: bool = false
+var _press_tween: Tween = null
+var _select_tween: Tween = null
 
 var _style_default: StyleBoxFlat
 var _style_valid: StyleBoxFlat
@@ -127,9 +129,14 @@ func set_valid(valid: bool) -> void:
 	_apply_state_style()
 
 func set_selected(selected: bool) -> void:
+	var was_selected := _selected
 	_selected = selected
 	_apply_state_style()
 	_apply_raise()
+	if _selected and not was_selected:
+		_tween_select_scale(1.05)
+	elif not _selected and was_selected:
+		_tween_select_scale(1.0)
 
 func _apply_raise() -> void:
 	position.y = -SELECT_RAISE_PX if _selected else 0.0
@@ -176,6 +183,7 @@ func _gui_input(event: InputEvent) -> void:
 		else:
 			_drag_active = false
 			_reorder_active = false
+			_release_press_scale()
 
 func _begin_press(pos_global: Vector2) -> void:
 	_drag_start_x_global = pos_global.x
@@ -186,6 +194,7 @@ func _begin_press(pos_global: Vector2) -> void:
 	if not _is_valid:
 		get_viewport().set_input_as_handled()
 		return
+	_apply_press_scale()
 	var now := Time.get_ticks_msec()
 	if now - _last_tap_time <= DOUBLE_TAP_MS and _last_tap_time > 0:
 		_last_tap_time = 0
@@ -244,3 +253,25 @@ func _update_reorder(x_global: float) -> void:
 			new_idx += 1
 	if new_idx != my_idx:
 		parent.move_child(self, new_idx)
+
+# --- Press / selection scale feedback ---
+
+func _apply_press_scale() -> void:
+	if _press_tween != null and _press_tween.is_valid():
+		_press_tween.kill()
+	_press_tween = create_tween()
+	_press_tween.tween_property(self, "scale", Vector2(1.05, 1.05), 0.08).set_ease(Tween.EASE_OUT)
+
+func _release_press_scale() -> void:
+	if _press_tween != null and _press_tween.is_valid():
+		_press_tween.kill()
+	# If selected, keep selection scale; otherwise return to 1.0.
+	var target := Vector2(1.05, 1.05) if _selected else Vector2.ONE
+	_press_tween = create_tween()
+	_press_tween.tween_property(self, "scale", target, 0.06).set_ease(Tween.EASE_IN)
+
+func _tween_select_scale(target_s: float) -> void:
+	if _select_tween != null and _select_tween.is_valid():
+		_select_tween.kill()
+	_select_tween = create_tween()
+	_select_tween.tween_property(self, "scale", Vector2(target_s, target_s), 0.08).set_ease(Tween.EASE_OUT)

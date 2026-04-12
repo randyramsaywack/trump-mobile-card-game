@@ -10,6 +10,10 @@ extends Node
 ## Labels that display suit symbols should call SuitFont.apply(label)
 ## on _ready to add the symbol font as a fallback override.
 
+## The .ttf files use Godot's "keep" importer (see their .import sidecars)
+## so the raw bytes are bundled as-is in the exported PCK instead of being
+## converted to .fontdata. This lets FileAccess read them at runtime on
+## Android/iOS the same way it does on desktop.
 const SYMBOL_FONT_PATH := "res://assets/fonts/raw/NotoSansSymbols-Regular.ttf"
 const SYMBOL2_FONT_PATH := "res://assets/fonts/raw/NotoSansSymbols2-Regular.ttf"
 

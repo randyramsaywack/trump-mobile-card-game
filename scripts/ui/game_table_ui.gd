@@ -599,7 +599,7 @@ func _is_animating() -> bool:
 func _do_show_trump_selection(seat: int, initial_cards: Array) -> void:
 	if seat == 0 and _trump_selector_overlay != null:
 		_trump_selector_overlay.call("show_for_human", initial_cards)
-		_trump_selector_overlay.visible = true
+		_trump_selector_overlay.call("animate_show")
 
 func _on_trump_declared(suit: Card.Suit) -> void:
 	# Trump is declared — discard any pending selector (AI may have declared during shuffle)
@@ -608,7 +608,7 @@ func _on_trump_declared(suit: Card.Suit) -> void:
 	# Pause again while the 47 remaining cards animate out.
 	GameState.get_round_manager().deal_paused = true
 	if _trump_selector_overlay != null:
-		_trump_selector_overlay.visible = false
+		_trump_selector_overlay.call("animate_hide")
 	trump_label.text = "Trump: " + Card.SUIT_NAMES[suit] + " " + Card.SUIT_SYMBOLS[suit]
 	_show_trump_watermark(suit)
 
@@ -619,7 +619,10 @@ func _show_trump_watermark(suit: Card.Suit) -> void:
 	var is_red := suit == Card.Suit.HEARTS or suit == Card.Suit.DIAMONDS
 	trump_watermark.add_theme_color_override("font_color",
 			WATERMARK_RED if is_red else WATERMARK_BLACK)
+	trump_watermark.modulate.a = 0.0
 	trump_watermark.visible = true
+	var tw := create_tween()
+	tw.tween_property(trump_watermark, "modulate:a", 1.0, 0.3 * Settings.anim_multiplier())
 
 func _hide_trump_watermark() -> void:
 	if trump_watermark != null:
@@ -658,9 +661,12 @@ func _do_apply_turn(seat: int, valid_cards: Array) -> void:
 
 func _auto_play_last_card(card: Card) -> void:
 	var gen := _round_gen
+	var fade_dur := 0.15 * Settings.anim_multiplier()
 	toast_label.text = AUTO_PLAY_TOAST
-	toast_label.modulate.a = 1.0
+	toast_label.modulate.a = 0.0
 	toast_label.visible = true
+	var fade_in := create_tween()
+	fade_in.tween_property(toast_label, "modulate:a", 1.0, fade_dur)
 	await get_tree().create_timer(AUTO_PLAY_DELAY).timeout
 	if _round_gen != gen:
 		toast_label.visible = false
@@ -671,7 +677,11 @@ func _auto_play_last_card(card: Card) -> void:
 	if remaining > 0.0:
 		await get_tree().create_timer(remaining).timeout
 	if _round_gen == gen:
-		toast_label.visible = false
+		var fade_out := create_tween()
+		fade_out.tween_property(toast_label, "modulate:a", 0.0, fade_dur)
+		await fade_out.finished
+		if _round_gen == gen:
+			toast_label.visible = false
 
 func _highlight_valid_cards() -> void:
 	for child in bottom_hand.get_children():
@@ -851,7 +861,6 @@ func _on_round_ended(winning_team: int) -> void:
 	session_label.text = "Session: %d–%d" % [wins[0], wins[1]]
 	if _win_screen_overlay != null:
 		_win_screen_overlay.call("show_result", winning_team, wins)
-		_win_screen_overlay.visible = true
 
 # ── Table management ──────────────────────────────────────────────────────────
 

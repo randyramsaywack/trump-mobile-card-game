@@ -1,6 +1,9 @@
 # Godot
 .godot/
 *.import
+# Exception: the font .import files use the "keep" importer to bundle raw
+# TTF bytes into the exported PCK — they are source config, not artifacts.
+!assets/fonts/raw/*.import
 
 # Build artifacts
 *.apk
