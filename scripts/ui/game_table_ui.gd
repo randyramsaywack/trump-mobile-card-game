@@ -164,6 +164,20 @@ func _set_all_avatars_inactive() -> void:
 		if avatar:
 			avatar.set_active(false)
 
+func _update_avatar_tricks(seat_books: Array) -> void:
+	if seat_books.size() < 4:
+		return
+	for s in range(4):
+		var avatar = _get_avatar(s)
+		if avatar:
+			avatar.set_tricks(int(seat_books[s]))
+
+func _clear_avatar_tricks() -> void:
+	for s in range(4):
+		var avatar = _get_avatar(s)
+		if avatar:
+			avatar.clear_tricks()
+
 ## Mobile lifecycle handlers. Back button opens (or closes) the settings
 ## overlay; app-pause pauses the round clock so AI doesn't run in the
 ## background; app-resume restores play.
@@ -270,9 +284,10 @@ func _apply_card_sizing() -> void:
 	var top_hand_bottom: float = top_hand_top + sh + 4.0
 	top_hand_node.offset_bottom = top_hand_bottom
 	mid_row.offset_top = top_hand_bottom
-	# Bottom area: BottomHand(h+6) + name_gap + SouthAvatar(avatar_h) + safe_bottom.
+	# Bottom area: SouthAvatar sits above BottomHand so the trick count
+	# is always visible and never covered by cards.
 	var bottom_hand_height: float = h + 6.0
-	var south_avatar_offset: float = bottom_hand_height + name_gap + avatar_h + safe_bottom
+	var _south_section: float = bottom_hand_height + name_gap + avatar_h + safe_bottom
 	# West/East avatars: horizontal layout set now; vertical deferred to
 	# _reposition_side_avatars() after dealing populates containers.
 	var side_avatar_w: float = 48.0
@@ -289,18 +304,20 @@ func _apply_card_sizing() -> void:
 	east_avatar.visible = false
 	bottom_hand.offset_top = -bottom_hand_height - safe_bottom
 	bottom_hand.offset_bottom = -safe_bottom
+	# South avatar: positioned above the bottom hand.
+	var south_avatar_top: float = bottom_hand_height + name_gap + safe_bottom
 	south_avatar.offset_left = -24.0
 	south_avatar.offset_right = 24.0
-	south_avatar.offset_top = -south_avatar_offset
-	south_avatar.offset_bottom = -south_avatar_offset + avatar_h
-	mid_row.offset_bottom = -south_avatar_offset
+	south_avatar.offset_top = -(south_avatar_top + avatar_h)
+	south_avatar.offset_bottom = -south_avatar_top
+	mid_row.offset_bottom = -(south_avatar_top + avatar_h + name_gap)
 	# Respect horizontal safe insets on MidRow so side hands clear any
 	# landscape-notch cutouts (no-op in portrait).
 	mid_row.offset_left = safe_left
 	mid_row.offset_right = -safe_right
-	# Toast sits just above the bottom hand — follow safe_bottom.
-	toast_label.offset_top = -(south_avatar_offset + 20.0)
-	toast_label.offset_bottom = -(south_avatar_offset)
+	# Toast sits just above the south avatar.
+	toast_label.offset_top = -(south_avatar_top + avatar_h + 20.0)
+	toast_label.offset_bottom = -(south_avatar_top + avatar_h)
 
 func _apply_trick_slot_layout() -> void:
 	var w: float = _card_size.x
@@ -778,17 +795,17 @@ func _on_card_played(seat: int, card: Card) -> void:
 	var tween := AnimationManager.card_play(fly, target)
 	await tween.finished
 
-func _on_trick_completed(winner_seat: int, books: Array) -> void:
+func _on_trick_completed(winner_seat: int, books: Array, seat_books: Array) -> void:
 	_new_trick_pending = true
 	# Team 0 = human + partner (seats 0, 2). Vibrate only on player-team wins.
 	if winner_seat == 0 or winner_seat == 2:
 		GameState.vibrate(100)
-	_play_trick_collection(winner_seat, books)
+	_play_trick_collection(winner_seat, books, seat_books)
 
 ## Highlight the winning card, pause, then animate all 4 cards toward the
 ## winner's hand, shrinking as they travel. Books label and trick-win sound
 ## fire only after the collection animation completes.
-func _play_trick_collection(winner_seat: int, books: Array) -> void:
+func _play_trick_collection(winner_seat: int, books: Array, seat_books: Array = []) -> void:
 	var gen := _round_gen
 	# Highlight the winning card gold.
 	var winner_node: Control = _trick_cards_by_seat.get(winner_seat, null)
@@ -809,7 +826,7 @@ func _play_trick_collection(winner_seat: int, books: Array) -> void:
 	# Target = center of the winner's hand container.
 	var winner_container := _get_hand_container(winner_seat)
 	if winner_container == null:
-		_finalize_trick_collection(cards, books)
+		_finalize_trick_collection(cards, books, seat_books)
 		return
 	var target: Vector2 = winner_container.global_position + winner_container.size / 2.0
 	var tween := AnimationManager.trick_collect(cards, target, self)
@@ -817,11 +834,12 @@ func _play_trick_collection(winner_seat: int, books: Array) -> void:
 		await tween.finished
 	if _round_gen != gen:
 		return
-	_finalize_trick_collection(cards, books)
+	_finalize_trick_collection(cards, books, seat_books)
 
-func _finalize_trick_collection(cards: Array, books: Array) -> void:
+func _finalize_trick_collection(cards: Array, books: Array, seat_books: Array = []) -> void:
 	AudioManager.play("trick_win")
 	books_label.text = "Books: %d–%d" % [books[0], books[1]]
+	_update_avatar_tricks(seat_books)
 	for node in cards:
 		if is_instance_valid(node):
 			(node as Node).queue_free()
@@ -854,6 +872,7 @@ func _clear_table() -> void:
 	trump_label.text = "Trump: —"
 	books_label.text = "Books: 0–0"
 	turn_label.text = "—'s turn"
+	_clear_avatar_tricks()
 
 func _on_round_started(_dealer_seat: int, _trump_selector_seat: int) -> void:
 	_round_gen += 1

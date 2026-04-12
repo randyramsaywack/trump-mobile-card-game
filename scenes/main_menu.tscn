@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://mainmenu"]
+[gd_scene load_steps=5 format=3 uid="uid://mainmenu"]
 
 [ext_resource type="Script" path="res://scripts/ui/main_menu_ui.gd" id="1_mainmenu"]
 
@@ -56,50 +56,64 @@ layout_mode = 2
 size_flags_horizontal = 4
 text = "TRUMP"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 64
-theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
-theme_override_constants/shadow_offset_x = 2
-theme_override_constants/shadow_offset_y = 3
-theme_override_constants/shadow_outline_size = 0
+theme_override_font_sizes/font_size = 72
+theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
+theme_override_colors/font_outline_color = Color(0.45, 0.35, 0.12, 1)
+theme_override_constants/outline_size = 4
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.55)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 4
+theme_override_constants/shadow_outline_size = 6
+
+[node name="DividerRow" type="HBoxContainer" parent="CenterLayout"]
+layout_mode = 2
+size_flags_horizontal = 4
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="LeftLine" type="ColorRect" parent="CenterLayout/DividerRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(50, 1)
+size_flags_vertical = 4
+color = Color(0.788, 0.659, 0.298, 0.5)
+
+[node name="Spades" type="Label" parent="CenterLayout/DividerRow"]
+layout_mode = 2
+text = "♠"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 1, 1, 0.5)
+
+[node name="Hearts" type="Label" parent="CenterLayout/DividerRow"]
+layout_mode = 2
+text = "♥"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.753, 0.224, 0.169, 0.85)
+
+[node name="Diamonds" type="Label" parent="CenterLayout/DividerRow"]
+layout_mode = 2
+text = "♦"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.753, 0.224, 0.169, 0.85)
+
+[node name="Clubs" type="Label" parent="CenterLayout/DividerRow"]
+layout_mode = 2
+text = "♣"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 1, 1, 0.5)
+
+[node name="RightLine" type="ColorRect" parent="CenterLayout/DividerRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(50, 1)
+size_flags_vertical = 4
+color = Color(0.788, 0.659, 0.298, 0.5)
 
 [node name="SubtitleLabel" type="Label" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
 text = "CARD GAME"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 13
-theme_override_colors/font_color = Color(1, 1, 1, 0.6)
-
-[node name="SuitRow" type="HBoxContainer" parent="CenterLayout"]
-layout_mode = 2
-size_flags_horizontal = 4
-alignment = 1
-theme_override_constants/separation = 22
-
-[node name="Spades" type="Label" parent="CenterLayout/SuitRow"]
-layout_mode = 2
-text = "♠"
-theme_override_font_sizes/font_size = 24
-theme_override_colors/font_color = Color(1, 1, 1, 0.5)
-
-[node name="Hearts" type="Label" parent="CenterLayout/SuitRow"]
-layout_mode = 2
-text = "♥"
-theme_override_font_sizes/font_size = 24
-theme_override_colors/font_color = Color(0.753, 0.224, 0.169, 0.85)
-
-[node name="Diamonds" type="Label" parent="CenterLayout/SuitRow"]
-layout_mode = 2
-text = "♦"
-theme_override_font_sizes/font_size = 24
-theme_override_colors/font_color = Color(0.753, 0.224, 0.169, 0.85)
-
-[node name="Clubs" type="Label" parent="CenterLayout/SuitRow"]
-layout_mode = 2
-text = "♣"
-theme_override_font_sizes/font_size = 24
-theme_override_colors/font_color = Color(1, 1, 1, 0.5)
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 0.6)
 
 [node name="SinglePlayerBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2

@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://avatar_scene"]
+[gd_scene load_steps=5 format=3 uid="uid://avatar_scene"]
 
 [ext_resource type="Script" path="res://scripts/ui/avatar.gd" id="1_avatar"]
 
@@ -26,13 +26,6 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="SB_body"]
-bg_color = Color(0.533, 0.533, 0.533, 0.7)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
 
 [node name="Avatar" type="VBoxContainer"]
 script = ExtResource("1_avatar")
@@ -69,7 +62,18 @@ offset_top = 19.0
 offset_right = 32.0
 offset_bottom = 35.0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("SB_body")
+theme_override_styles/panel = SubResource("SB_head")
+
+[node name="TricksCount" type="Label" parent="CircleBorder/CircleBG"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 18
 
 [node name="NameLabel" type="Label" parent="."]
 layout_mode = 2

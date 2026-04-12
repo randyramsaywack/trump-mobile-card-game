@@ -14,6 +14,8 @@ var _border_style: StyleBoxFlat
 var _pulse_tween: Tween = null
 
 @onready var _name_label: Label = $NameLabel
+@onready var _tricks_count: Label = $CircleBorder/CircleBG/TricksCount
+@onready var _silhouette: Control = $CircleBorder/CircleBG/Silhouette
 @onready var _circle_border: PanelContainer = $CircleBorder
 
 func _ready() -> void:
@@ -23,6 +25,16 @@ func _ready() -> void:
 
 func set_player_name(n: String) -> void:
 	_name_label.text = n
+
+func set_tricks(count: int) -> void:
+	_tricks_count.text = str(count)
+	_silhouette.visible = false
+	_tricks_count.visible = true
+
+func clear_tricks() -> void:
+	_tricks_count.text = ""
+	_tricks_count.visible = false
+	_silhouette.visible = true
 
 func set_active(active: bool) -> void:
 	if active:

@@ -6,7 +6,7 @@ signal trump_selection_needed(seat_index: int, initial_cards: Array)
 signal trump_declared(suit: Card.Suit)
 signal turn_started(seat_index: int, valid_cards: Array)
 signal card_played_signal(seat_index: int, card: Card)
-signal trick_completed(winner_seat: int, books: Array)
+signal trick_completed(winner_seat: int, books: Array, books_by_seat: Array)
 signal round_ended(winning_team: int)
 
 enum RoundState {
@@ -31,6 +31,7 @@ var trump_selector_seat: int
 var current_player_seat: int
 var current_trick: Trick
 var books: Array[int] = [0, 0]  # [team0_books, team1_books]
+var books_by_seat: Array[int] = [0, 0, 0, 0]  # per-player trick wins
 ## History of every trick completed this round. One entry per trick with
 ## trick number, winning team name, winning card, and all 4 played cards
 ## tagged with position (bottom/top/left/right) and player label.
@@ -54,6 +55,7 @@ func start_round(player_list: Array[Player], dealer: int) -> void:
 	dealer_seat = dealer
 	trump_selector_seat = (dealer_seat + 1) % 4
 	books = [0, 0]
+	books_by_seat = [0, 0, 0, 0]
 	trick_history.clear()
 	deck = Deck.new()
 	deck.shuffle()
@@ -224,8 +226,9 @@ func _resolve_trick() -> void:
 	_trick_winner_seat = current_trick.get_winner_index()
 	var winner_team := 0 if _trick_winner_seat in [0, 2] else 1
 	books[winner_team] += 1
+	books_by_seat[_trick_winner_seat] += 1
 	trick_history.append(_build_trick_history_entry(winner_team))
-	trick_completed.emit(_trick_winner_seat, books.duplicate())
+	trick_completed.emit(_trick_winner_seat, books.duplicate(), books_by_seat.duplicate())
 	# Pause for TRICK_DISPLAY_DURATION seconds so the UI can highlight the winning card
 	_trick_display_timer = TRICK_DISPLAY_DURATION * Settings.anim_multiplier()
 	_set_state(RoundState.TRICK_DISPLAY)

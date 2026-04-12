@@ -71,7 +71,11 @@ func _on_round_ended(winning_team: int) -> void:
 ## Alternate between the two seats of the losing team.
 func _rotate_dealer(losing_team: int) -> void:
 	var current: int = _team_dealer[losing_team]
-	var team_seats: Array[int] = [0, 2] if losing_team == 0 else [1, 3]
+	var team_seats: Array[int]
+	if losing_team == 0:
+		team_seats = [0, 2]
+	else:
+		team_seats = [1, 3]
 	var other_seat: int = team_seats[1] if current == team_seats[0] else team_seats[0]
 	_team_dealer[losing_team] = other_seat
 	dealer_seat = other_seat
@@ -96,7 +100,7 @@ func get_trump_suit() -> Card.Suit:
 
 ## Single-player stats hooks — single player is the only mode today, so every
 ## trick/round counts.
-func _on_trick_completed_stats(winner_seat: int, _books: Array) -> void:
+func _on_trick_completed_stats(winner_seat: int, _books: Array, _seat_books: Array = []) -> void:
 	var winning_team := 0 if winner_seat in [0, 2] else 1
 	StatsManager.record_trick_winner(winning_team)
 

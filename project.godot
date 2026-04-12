@@ -13,7 +13,7 @@ config_version=5
 config/name="Trump"
 run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.6", "Mobile")
-config/icon="res://icon.svg"
+config/icon="res://assets/ui/icon_512.png"
 config/run/main_scene="res://scenes/main_menu.tscn"
 
 [autoload]
