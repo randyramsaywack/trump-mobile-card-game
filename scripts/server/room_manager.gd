@@ -1,0 +1,171 @@
+class_name RoomManager
+extends RefCounted
+
+## Server-only. Owns all rooms and every room-mutation handler.
+## Every mutation method returns a list of (peer_id, message_dict) pairs
+## for the caller (main_server.gd) to actually send. That keeps this class
+## free of ENet coupling and easier to reason about.
+
+## Maps peer_id → username for peers that completed the `hello` handshake
+## but aren't in a room yet.
+var _usernames: Dictionary = {}
+
+## code → Room
+var _rooms: Dictionary = {}
+
+## peer_id → code (fast lookup for the room a peer is currently in)
+var _peer_to_room: Dictionary = {}
+
+# ── Registration ──────────────────────────────────────────────────────────────
+
+func register_peer(peer_id: int, username: String) -> void:
+	_usernames[peer_id] = username
+
+func get_username(peer_id: int) -> String:
+	return String(_usernames.get(peer_id, ""))
+
+func is_registered(peer_id: int) -> bool:
+	return _usernames.has(peer_id)
+
+# ── Room lookup ───────────────────────────────────────────────────────────────
+
+func room_for_peer(peer_id: int) -> Room:
+	var code := String(_peer_to_room.get(peer_id, ""))
+	if code == "":
+		return null
+	return _rooms.get(code, null) as Room
+
+# ── create_room ───────────────────────────────────────────────────────────────
+
+func handle_create_room(peer_id: int) -> Array:
+	if not is_registered(peer_id):
+		return [_err_to(peer_id, Protocol.ERR_NOT_IN_ROOM)]
+	if _peer_to_room.has(peer_id):
+		return [_err_to(peer_id, Protocol.ERR_ALREADY_IN_ROOM)]
+	var room := Room.new()
+	room.code = _generate_unique_code()
+	_rooms[room.code] = room
+	var entry := room.add_player(peer_id, get_username(peer_id))
+	_peer_to_room[peer_id] = room.code
+	var out: Array = []
+	out.append([peer_id, _room_joined_msg(room, entry)])
+	# Broadcast room_state too so the new host has a consistent view.
+	out.append_array(_broadcast_room_state(room))
+	return out
+
+# ── join_room ─────────────────────────────────────────────────────────────────
+
+func handle_join_room(peer_id: int, data: Dictionary) -> Array:
+	if not is_registered(peer_id):
+		return [_err_to(peer_id, Protocol.ERR_NOT_IN_ROOM)]
+	if _peer_to_room.has(peer_id):
+		return [_err_to(peer_id, Protocol.ERR_ALREADY_IN_ROOM)]
+	var code := String(data.get("code", "")).to_upper()
+	if code.length() != Protocol.ROOM_CODE_LENGTH:
+		return [_err_to(peer_id, Protocol.ERR_INVALID_ROOM_CODE)]
+	for ch in code:
+		if not Protocol.ROOM_CODE_ALPHABET.contains(ch):
+			return [_err_to(peer_id, Protocol.ERR_INVALID_ROOM_CODE)]
+	var room: Room = _rooms.get(code, null)
+	if room == null:
+		return [_err_to(peer_id, Protocol.ERR_ROOM_NOT_FOUND)]
+	if room.is_full():
+		return [_err_to(peer_id, Protocol.ERR_ROOM_FULL)]
+	var entry := room.add_player(peer_id, get_username(peer_id))
+	_peer_to_room[peer_id] = room.code
+	var out: Array = []
+	out.append([peer_id, _room_joined_msg(room, entry)])
+	out.append_array(_broadcast_room_state(room))
+	return out
+
+# ── leave_room ────────────────────────────────────────────────────────────────
+
+func handle_leave_room(peer_id: int) -> Array:
+	var room := room_for_peer(peer_id)
+	if room == null:
+		return []
+	return _remove_peer_from_room(peer_id, room)
+
+# ── start_game ────────────────────────────────────────────────────────────────
+
+func handle_start_game(peer_id: int) -> Array:
+	var room := room_for_peer(peer_id)
+	if room == null:
+		return [_err_to(peer_id, Protocol.ERR_NOT_IN_ROOM)]
+	if room.host_id != peer_id:
+		return [_err_to(peer_id, Protocol.ERR_NOT_HOST)]
+	room.state = Room.State.STARTING
+	var out: Array = []
+	for p in room.players:
+		out.append([int(p["peer_id"]), Protocol.msg(Protocol.MSG_GAME_STARTING)])
+	return out
+
+# ── disconnect path ───────────────────────────────────────────────────────────
+
+## Called from main_server.gd on any `peer_disconnected`. Cleans up the
+## username table and removes the peer from any room it was in.
+func handle_disconnect(peer_id: int) -> Array:
+	_usernames.erase(peer_id)
+	var room := room_for_peer(peer_id)
+	if room == null:
+		return []
+	return _remove_peer_from_room(peer_id, room)
+
+# ── internal helpers ──────────────────────────────────────────────────────────
+
+func _remove_peer_from_room(peer_id: int, room: Room) -> Array:
+	var was_host := room.host_id == peer_id
+	room.remove_player(peer_id)
+	_peer_to_room.erase(peer_id)
+	var out: Array = []
+	if room.players.is_empty():
+		_rooms.erase(room.code)
+		return out
+	if was_host:
+		# Evict remaining players with HOST_LEFT and delete the room.
+		for p in room.players:
+			var pid := int(p["peer_id"])
+			out.append([pid, _err_msg(Protocol.ERR_HOST_LEFT)])
+			_peer_to_room.erase(pid)
+		_rooms.erase(room.code)
+		return out
+	out.append_array(_broadcast_room_state(room))
+	return out
+
+func _broadcast_room_state(room: Room) -> Array:
+	var msg := Protocol.msg(Protocol.MSG_ROOM_STATE, room.to_state_dict())
+	var out: Array = []
+	for p in room.players:
+		out.append([int(p["peer_id"]), msg])
+	return out
+
+func _room_joined_msg(room: Room, entry: Dictionary) -> Dictionary:
+	return Protocol.msg(Protocol.MSG_ROOM_JOINED, {
+		"code": room.code,
+		"players": room.players.duplicate(true),
+		"host_id": room.host_id,
+		"your_seat": int(entry["seat"]),
+	})
+
+func _err_to(peer_id: int, code: String) -> Array:
+	return [peer_id, _err_msg(code)]
+
+func _err_msg(code: String) -> Dictionary:
+	return Protocol.msg(Protocol.MSG_ERROR, {
+		"code": code,
+		"message": String(Protocol.ERROR_MESSAGES.get(code, code)),
+	})
+
+func _generate_unique_code() -> String:
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	for _attempt in 64:
+		var s := ""
+		for _i in Protocol.ROOM_CODE_LENGTH:
+			var idx := rng.randi_range(0, Protocol.ROOM_CODE_ALPHABET.length() - 1)
+			s += Protocol.ROOM_CODE_ALPHABET[idx]
+		if not _rooms.has(s):
+			return s
+	# 32^6 ≈ 1.07B; 64 attempts with a handful of live rooms should never reach here.
+	push_error("RoomManager: failed to generate unique room code after 64 attempts")
+	return ""
