@@ -15,15 +15,10 @@ extends Control
 ## route the arriving ROOM_JOINED signal into the correct next-scene.
 var _pending_action: String = ""
 
-const DEFAULT_MP_USERNAME := "Guest"
-
 func _ready() -> void:
-	# Use the persisted Settings name unless it's still the single-player
-	# default "You" — in that case fall back to the multiplayer default "Guest".
-	var initial := Settings.player_name
-	if initial == Settings.PLAYER_NAME_DEFAULT:
-		initial = DEFAULT_MP_USERNAME
-	username_edit.text = initial
+	# The multiplayer username is persisted separately from the single-player
+	# "You" placeholder so editing here never bleeds into single-player UI.
+	username_edit.text = Settings.mp_username
 	username_edit.text_changed.connect(_on_username_changed)
 	join_code_edit.text_changed.connect(_on_join_code_changed)
 	create_button.pressed.connect(_on_create_pressed)
@@ -67,8 +62,8 @@ func _refresh_status() -> void:
 			status_label.text = "In room"
 
 func _persist_username() -> void:
-	Settings.set_player_name(_current_username())
-	NetworkState.local_username = Settings.player_name
+	Settings.set_mp_username(_current_username())
+	NetworkState.local_username = Settings.mp_username
 
 func _on_create_pressed() -> void:
 	_persist_username()

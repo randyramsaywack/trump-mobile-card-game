@@ -23,11 +23,13 @@ signal changed()
 
 const PLAYER_NAME_DEFAULT := "You"
 const PLAYER_NAME_MAX_LEN := 12
+const MP_USERNAME_DEFAULT := "Guest"
 
 var volume: float = 100.0  # 0-100
 var anim_speed: int = AnimSpeed.NORMAL
 var vibration_enabled: bool = true
 var player_name: String = PLAYER_NAME_DEFAULT
+var mp_username: String = MP_USERNAME_DEFAULT
 var auto_sort: bool = true
 
 func _ready() -> void:
@@ -72,6 +74,16 @@ func set_player_name(value: String) -> void:
 	_save()
 	changed.emit()
 
+func set_mp_username(value: String) -> void:
+	var trimmed := value.strip_edges().substr(0, PLAYER_NAME_MAX_LEN)
+	if trimmed == "":
+		trimmed = MP_USERNAME_DEFAULT
+	if trimmed == mp_username:
+		return
+	mp_username = trimmed
+	_save()
+	changed.emit()
+
 func _apply_volume() -> void:
 	var linear := volume / 100.0
 	var db := -80.0 if linear <= 0.0 else linear_to_db(linear)
@@ -91,6 +103,10 @@ func _load() -> void:
 	if name_val == "":
 		name_val = PLAYER_NAME_DEFAULT
 	player_name = name_val.substr(0, PLAYER_NAME_MAX_LEN)
+	var mp_val := String(cfg.get_value("player", "mp_username", MP_USERNAME_DEFAULT)).strip_edges()
+	if mp_val == "":
+		mp_val = MP_USERNAME_DEFAULT
+	mp_username = mp_val.substr(0, PLAYER_NAME_MAX_LEN)
 	auto_sort = bool(cfg.get_value("gameplay", "auto_sort", true))
 
 func _save() -> void:
@@ -99,5 +115,6 @@ func _save() -> void:
 	cfg.set_value("video", "anim_speed", anim_speed)
 	cfg.set_value("haptics", "vibration_enabled", vibration_enabled)
 	cfg.set_value("player", "name", player_name)
+	cfg.set_value("player", "mp_username", mp_username)
 	cfg.set_value("gameplay", "auto_sort", auto_sort)
 	cfg.save(CONFIG_PATH)
