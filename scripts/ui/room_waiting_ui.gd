@@ -42,8 +42,9 @@ func _render() -> void:
 		else:
 			label.text = "Seat %d: Empty — AI will fill" % [i + 1]
 	start_button.visible = NetworkState.is_host
-	# Enable Start whenever there is at least one human (the host), per spec.
-	start_button.disabled = NetworkState.players.size() < 1
+	# Per CLAUDE.md: Start is enabled only when 2+ humans are in the room.
+	# Empty seats will be filled with AI when game logic lands.
+	start_button.disabled = NetworkState.players.size() < 2
 
 func _on_start_pressed() -> void:
 	NetworkState.start_game()
