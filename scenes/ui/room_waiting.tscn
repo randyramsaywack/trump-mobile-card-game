@@ -1,0 +1,68 @@
+[gd_scene load_steps=2 format=3 uid="uid://roomwaiting"]
+
+[ext_resource type="Script" path="res://scripts/ui/room_waiting_ui.gd" id="1_room_wait"]
+
+[node name="RoomWaiting" type="Control"]
+script = ExtResource("1_room_wait")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.102, 0.29, 0.18, 1)
+
+[node name="Center" type="VBoxContainer" parent="."]
+anchor_left = 0.08
+anchor_top = 0.1
+anchor_right = 0.92
+anchor_bottom = 0.92
+theme_override_constants/separation = 14
+
+[node name="TitleLabel" type="Label" parent="Center"]
+layout_mode = 2
+text = "Room Code"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 0.85)
+
+[node name="CodeLabel" type="Label" parent="Center"]
+layout_mode = 2
+text = "------"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 56
+theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="Seat0" type="Label" parent="Center"]
+layout_mode = 2
+text = "Seat 1: Empty — AI will fill"
+theme_override_font_sizes/font_size = 18
+
+[node name="Seat1" type="Label" parent="Center"]
+layout_mode = 2
+text = "Seat 2: Empty — AI will fill"
+theme_override_font_sizes/font_size = 18
+
+[node name="Seat2" type="Label" parent="Center"]
+layout_mode = 2
+text = "Seat 3: Empty — AI will fill"
+theme_override_font_sizes/font_size = 18
+
+[node name="Seat3" type="Label" parent="Center"]
+layout_mode = 2
+text = "Seat 4: Empty — AI will fill"
+theme_override_font_sizes/font_size = 18
+
+[node name="StartButton" type="Button" parent="Center"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 54)
+text = "Start Game"
+theme_override_font_sizes/font_size = 16
+
+[node name="LeaveButton" type="Button" parent="Center"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "Leave Room"
+theme_override_font_sizes/font_size = 14
