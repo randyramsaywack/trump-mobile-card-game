@@ -360,7 +360,7 @@ func _send_play(card: Card) -> void:
 		GameState.get_round_manager().play_card(0, card)
 
 func _set_deal_paused(value: bool) -> void:
-	var src := _source()
+	var src = _source()
 	if src != null and "deal_paused" in src:
 		src.deal_paused = value
 
@@ -398,11 +398,11 @@ func _on_history_button_pressed() -> void:
 	# Informational overlay — does NOT pause the game.
 	if _history_overlay == null:
 		return
-	var src := _source()
+	var src = _source()
 	_history_overlay.call("show_history", src.trick_history)
 
 func _connect_signals() -> void:
-	var src := _source()
+	var src = _source()
 	src.hand_dealt.connect(_on_hand_dealt)
 	src.trump_selection_needed.connect(_on_trump_selection_needed)
 	src.trump_declared.connect(_on_trump_declared)
