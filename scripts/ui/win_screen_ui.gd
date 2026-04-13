@@ -29,11 +29,22 @@ func show_result(winning_team: int, session_wins: Array) -> void:
 		result_label.text = "Opponents Win!"
 		result_label.add_theme_color_override("font_color", COLOR_LOSS)
 	session_label.text = "Session — You: %d | Opponents: %d" % [session_wins[0], session_wins[1]]
+	if GameState.multiplayer_mode and not NetworkState.is_host:
+		next_round_btn.disabled = true
+		next_round_btn.text = "Waiting for host…"
+	else:
+		next_round_btn.disabled = false
+		next_round_btn.text = "Next Round"
 	_animate_entrance()
 
 func _on_next_round() -> void:
 	visible = false
-	GameState.start_next_round()
+	if GameState.multiplayer_mode:
+		if NetworkState.is_host:
+			NetworkState.next_round()
+		# Non-hosts ignore — button should already be hidden/disabled for them.
+	else:
+		GameState.start_next_round()
 
 func _animate_entrance() -> void:
 	visible = true

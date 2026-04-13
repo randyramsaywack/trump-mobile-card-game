@@ -86,4 +86,7 @@ func _populate_cards(cards: Array) -> void:
 		cards_container.add_child(card_node)
 
 func _choose(suit: Card.Suit) -> void:
-	GameState.get_round_manager().declare_trump(suit)
+	if GameState.multiplayer_mode:
+		NetworkState.declare_trump(suit)
+	else:
+		GameState.get_round_manager().declare_trump(suit)
