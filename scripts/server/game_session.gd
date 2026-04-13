@@ -122,6 +122,22 @@ func handle_play_card(peer_id: int, data: Dictionary) -> Array:
 	round_manager.play_card(seat, owned)
 	return drain_events()
 
+## Called every frame by RoomManager.tick → main_server._process.
+func tick(delta: float) -> Array:
+	round_manager.tick(delta)
+	return drain_events()
+
+## Called when a non-host peer drops connection. Swaps the peer's seat to
+## AI and broadcasts the takeover to remaining humans. Caller is responsible
+## for deciding whether the room collapses (host-left) — this method handles
+## only non-host cases.
+func handle_player_disconnect(peer_id: int) -> Array:
+	return _swap_to_ai(peer_id, "disconnect")
+
+## Called when a non-host peer sends leave_room while a game is live.
+func handle_player_leave(peer_id: int) -> Array:
+	return _swap_to_ai(peer_id, "left")
+
 ## Host-only. Starts the next round with the rotated dealer seat.
 func handle_next_round(peer_id: int, is_host: bool) -> Array:
 	if _seat_for_peer(peer_id) < 0:
@@ -252,6 +268,39 @@ func _rotate_dealer(losing_team: int) -> void:
 	var other_seat: int = int(team_seats[1]) if current == int(team_seats[0]) else int(team_seats[0])
 	_team_dealer[losing_team] = other_seat
 	dealer_seat = other_seat
+
+func _swap_to_ai(peer_id: int, reason: String) -> Array:
+	var seat := _seat_for_peer(peer_id)
+	if seat < 0:
+		return []
+	var old := players[seat] as Player
+	var display_name := old.display_name
+	var ai := AIPlayer.new(seat, display_name)
+	ai.difficulty = AIPlayer.Difficulty.MEDIUM
+	# Transfer the hand and any mid-trick state by reference.
+	ai.hand = old.hand
+	players[seat] = ai
+	# RoundManager reads `players` by reference through its own array, but
+	# its internal list was passed by reference in start_round, so mutate
+	# that one too to keep the two in sync.
+	if round_manager.players.size() > seat:
+		round_manager.players[seat] = ai
+	peer_to_seat.erase(peer_id)
+	seat_display_names[seat] = display_name
+	_append_to_all(Protocol.msg(Protocol.MSG_SEAT_TAKEN_OVER_BY_AI, {
+		"seat_index": seat,
+		"reason": reason,
+		"display_name": display_name,
+	}))
+	# If the swapped-in AI is the current actor, schedule its action so
+	# RoundManager doesn't stall. RoundManager.tick already drives AI timers
+	# once _schedule_ai_action primes _ai_pending.
+	var rm_state := round_manager.state
+	if rm_state == RoundManager.RoundState.PLAYER_TURN and round_manager.current_player_seat == seat:
+		round_manager.call("_schedule_ai_action")
+	elif rm_state == RoundManager.RoundState.TRUMP_SELECTION and round_manager.trump_selector_seat == seat:
+		round_manager.call("_schedule_ai_action")
+	return drain_events()
 
 func _serialize_trick_history() -> Array:
 	var out: Array = []
