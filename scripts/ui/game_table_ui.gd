@@ -103,8 +103,9 @@ func _ready() -> void:
 	add_child(_history_overlay)
 	history_button.pressed.connect(_on_history_button_pressed)
 	toast_label.visible = false
-	_refresh_south_name()
-	Settings.changed.connect(_refresh_south_name)
+	# Local player is always labelled "You" in both SP and MP — the spec
+	# displays the human by position, not by username.
+	south_avatar.set_player_name("You")
 	# Mobile: keep the display awake during play — AI turns + animations leave
 	# the human idle for long stretches that would otherwise trip screen sleep.
 	DisplayServer.screen_set_keep_on(true)
@@ -120,11 +121,6 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	# Release the wake lock when leaving the game scene.
 	DisplayServer.screen_set_keep_on(false)
-
-func _refresh_south_name() -> void:
-	# Local player is always labelled "You" in both SP and MP — the spec
-	# displays the human by position, not by username.
-	south_avatar.set_player_name("You")
 
 ## Reposition avatars above the actual first card in the side stacks.
 ## Called one frame after a dealing batch finishes so the VBoxContainer

@@ -2,7 +2,6 @@ extends Control
 
 signal closed()
 
-@onready var name_edit: LineEdit = $Panel/VBox/NameRow/NameEdit
 @onready var volume_slider: HSlider = $Panel/VBox/VolumeRow/VolumeSlider
 @onready var volume_value: Label = $Panel/VBox/VolumeRow/VolumeValue
 @onready var slow_btn: Button = $Panel/VBox/SpeedRow/SlowBtn
@@ -29,9 +28,6 @@ func _ready() -> void:
 	_refresh_speed_buttons()
 	_refresh_difficulty_buttons()
 	_refresh_vibration_toggle()
-	_refresh_name_edit()
-	name_edit.text_submitted.connect(_on_name_submitted)
-	name_edit.focus_exited.connect(_on_name_focus_exited)
 	vibration_toggle.toggled.connect(_on_vibration_toggled)
 	auto_sort_toggle.toggled.connect(_on_auto_sort_toggled)
 	_refresh_auto_sort_toggle()
@@ -70,18 +66,6 @@ func _refresh_difficulty_buttons() -> void:
 	medium_btn.button_pressed = GameState.ai_difficulty == AIPlayer.Difficulty.MEDIUM
 	hard_btn.button_pressed = GameState.ai_difficulty == AIPlayer.Difficulty.HARD
 	difficulty_desc.text = DIFFICULTY_DESC.get(GameState.ai_difficulty, "")
-
-func _refresh_name_edit() -> void:
-	name_edit.text = Settings.player_name
-
-func _on_name_submitted(new_text: String) -> void:
-	Settings.set_player_name(new_text)
-	_refresh_name_edit()
-	name_edit.release_focus()
-
-func _on_name_focus_exited() -> void:
-	Settings.set_player_name(name_edit.text)
-	_refresh_name_edit()
 
 func _on_vibration_toggled(pressed: bool) -> void:
 	Settings.set_vibration_enabled(pressed)

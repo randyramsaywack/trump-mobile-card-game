@@ -81,26 +81,6 @@ horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
 theme_override_font_sizes/font_size = 20
 
-[node name="NameRow" type="HBoxContainer" parent="Panel/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="NameLabel" type="Label" parent="Panel/VBox/NameRow"]
-layout_mode = 2
-text = "Your Name"
-theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
-theme_override_font_sizes/font_size = 13
-
-[node name="NameEdit" type="LineEdit" parent="Panel/VBox/NameRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-custom_minimum_size = Vector2(0, 36)
-max_length = 12
-placeholder_text = "You"
-theme_override_colors/font_color = Color(1, 0.95, 0.7, 1)
-theme_override_colors/caret_color = Color(0.788, 0.659, 0.298, 1)
-theme_override_font_sizes/font_size = 14
-
 [node name="VolumeRow" type="HBoxContainer" parent="Panel/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
