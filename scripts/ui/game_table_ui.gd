@@ -811,7 +811,11 @@ func _on_card_played(seat: int, card: Card) -> void:
 	var found := false
 	if container != null:
 		for child in container.get_children():
-			if child.get("card_data") == card:
+			var existing: Card = child.get("card_data")
+			# Compare by value, not identity: in multiplayer the Card instance
+			# from the server event is freshly deserialized and will never be
+			# the same object as the one bound to the card node.
+			if existing != null and existing.suit == card.suit and existing.rank == card.rank:
 				start_global = (child as Control).global_position
 				child.queue_free()
 				found = true
