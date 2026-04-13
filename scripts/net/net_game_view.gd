@@ -14,7 +14,9 @@ signal trick_completed(winner_seat: int, books: Array, books_by_seat: Array)
 signal round_ended(winning_team: int)
 ## Extra NetGameView-only signals the UI subscribes to for MP-specific events.
 signal seat_taken_over_by_ai(seat_index: int, display_name: String, reason: String)
-signal round_starting(dealer_seat: int, trump_selector_seat: int, round_number: int)
+## Matches GameState.round_started's arity so _on_round_started can be connected
+## to either source without a wrapper.
+signal round_starting(dealer_seat: int, trump_selector_seat: int)
 
 # Mirror of RoundManager's RoundState enum.
 enum RoundState {
@@ -138,12 +140,12 @@ func _apply_round_starting(data: Dictionary) -> void:
 	for p in players:
 		if p != null:
 			p.clear_hand()
-	round_starting.emit(dealer_seat, trump_selector_seat, int(data.get("round_number", 1)))
+	round_starting.emit(dealer_seat, trump_selector_seat)
 
 func _apply_hand_dealt(data: Dictionary) -> void:
 	var seat := int(data["seat_index"])
 	var count := int(data.get("count", 0))
-	var real_cards: Array = []
+	var real_cards: Array[Card] = []
 	if data.has("cards"):
 		for d in data["cards"]:
 			real_cards.append(Protocol.dict_to_card(d as Dictionary))
