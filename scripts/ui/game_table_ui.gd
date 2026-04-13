@@ -929,6 +929,12 @@ func _clear_table() -> void:
 
 func _on_round_started(_dealer_seat: int, _trump_selector_seat: int) -> void:
 	_round_gen += 1
+	# Dismiss any stale win screen from the previous round. In SP this is
+	# already hidden locally when the Next Round button is pressed, but in MP
+	# only the host's press advances the round — non-host clients need the
+	# overlay torn down here so they don't stay stuck on the win screen.
+	if _win_screen_overlay != null:
+		_win_screen_overlay.visible = false
 	_deal_queue.clear()
 	_deal_busy = false
 	_shuffle_done = false
