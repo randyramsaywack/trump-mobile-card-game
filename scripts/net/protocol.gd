@@ -45,6 +45,7 @@ const ERR_NOT_YOUR_TURN := "NOT_YOUR_TURN"
 const ERR_INVALID_CARD := "INVALID_CARD"
 const ERR_WRONG_PHASE := "WRONG_PHASE"
 const ERR_NOT_IN_GAME := "NOT_IN_GAME"
+const ERR_NOT_ENOUGH_PLAYERS := "NOT_ENOUGH_PLAYERS"
 
 # ── Error messages (human-readable) ───────────────────────────────────────────
 const ERROR_MESSAGES := {
@@ -60,6 +61,7 @@ const ERROR_MESSAGES := {
 	ERR_INVALID_CARD: "That card can't be played.",
 	ERR_WRONG_PHASE: "That action isn't allowed right now.",
 	ERR_NOT_IN_GAME: "The game hasn't started yet.",
+	ERR_NOT_ENOUGH_PLAYERS: "Need at least 2 players to start.",
 }
 
 # ── Transport ─────────────────────────────────────────────────────────────────
