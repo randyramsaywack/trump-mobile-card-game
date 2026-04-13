@@ -19,6 +19,10 @@ var round_number: int = 0
 ## Per-team dealer tracking (mirrors GameState._team_dealer). Alternates
 ## within the losing team on consecutive losses.
 var _team_dealer: Dictionary = {0: 0, 1: 1}
+## Set true when RoundManager finishes a round; cleared when host calls
+## handle_next_round. Gates `play_card`/`declare_trump` during the window
+## where the client is showing the win screen.
+var between_rounds: bool = false
 
 ## Tuple buffer: each entry is [peer_id:int, message:Dictionary]. Signal
 ## handlers append here; public methods return a drained copy to the caller.
@@ -70,6 +74,8 @@ func handle_declare_trump(peer_id: int, data: Dictionary) -> Array:
 	var seat := _seat_for_peer(peer_id)
 	if seat < 0:
 		return _err(peer_id, Protocol.ERR_NOT_IN_GAME)
+	if between_rounds:
+		return _err(peer_id, Protocol.ERR_WRONG_PHASE)
 	if round_manager.state != RoundManager.RoundState.TRUMP_SELECTION:
 		return _err(peer_id, Protocol.ERR_WRONG_PHASE)
 	if seat != round_manager.trump_selector_seat:
@@ -84,6 +90,8 @@ func handle_play_card(peer_id: int, data: Dictionary) -> Array:
 	var seat := _seat_for_peer(peer_id)
 	if seat < 0:
 		return _err(peer_id, Protocol.ERR_NOT_IN_GAME)
+	if between_rounds:
+		return _err(peer_id, Protocol.ERR_WRONG_PHASE)
 	if round_manager.state != RoundManager.RoundState.PLAYER_TURN:
 		return _err(peer_id, Protocol.ERR_WRONG_PHASE)
 	if seat != round_manager.current_player_seat:
@@ -109,6 +117,18 @@ func handle_play_card(peer_id: int, data: Dictionary) -> Array:
 	if owned not in valid:
 		return _err(peer_id, Protocol.ERR_INVALID_CARD)
 	round_manager.play_card(seat, owned)
+	return drain_events()
+
+## Host-only. Starts the next round with the rotated dealer seat.
+func handle_next_round(peer_id: int, is_host: bool) -> Array:
+	if _seat_for_peer(peer_id) < 0:
+		return _err(peer_id, Protocol.ERR_NOT_IN_GAME)
+	if not is_host:
+		return _err(peer_id, Protocol.ERR_NOT_HOST)
+	if not between_rounds:
+		return _err(peer_id, Protocol.ERR_WRONG_PHASE)
+	between_rounds = false
+	_start_round()
 	return drain_events()
 
 func start_first_round() -> Array:
@@ -195,8 +215,16 @@ func _on_trick_completed(winner_seat: int, books: Array, books_by_seat: Array) -
 		"books_by_seat": books_by_seat.duplicate(),
 	}))
 
-func _on_round_ended(_winning_team: int) -> void:
-	pass
+func _on_round_ended(winning_team: int) -> void:
+	session_wins[winning_team] += 1
+	_rotate_dealer(1 - winning_team)
+	between_rounds = true
+	var trick_history_serialized := _serialize_trick_history()
+	_append_to_all(Protocol.msg(Protocol.MSG_ROUND_ENDED, {
+		"winning_team": winning_team,
+		"session_wins": session_wins.duplicate(),
+		"trick_history": trick_history_serialized,
+	}))
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -212,6 +240,34 @@ func _append_to_all(msg: Dictionary) -> void:
 
 func _append_to_one(peer_id: int, msg: Dictionary) -> void:
 	_pending_events.append([int(peer_id), msg])
+
+## Rotate within the losing team's two seats. Mirrors the logic in
+## GameState._rotate_dealer (autoloads/game_state.gd lines 72–81).
+func _rotate_dealer(losing_team: int) -> void:
+	var current: int = int(_team_dealer[losing_team])
+	var team_seats: Array = _TEAM_SEATS[losing_team]
+	var other_seat: int = int(team_seats[1]) if current == int(team_seats[0]) else int(team_seats[0])
+	_team_dealer[losing_team] = other_seat
+	dealer_seat = other_seat
+
+func _serialize_trick_history() -> Array:
+	var out: Array = []
+	for entry in round_manager.trick_history:
+		var cards_played: Array = []
+		for cp in entry["cards_played"]:
+			cards_played.append({
+				"position": cp["position"],
+				"player": cp["player"],
+				"card": Protocol.card_to_dict(cp["card"]),
+			})
+		var winning_card := Protocol.card_to_dict(entry["winning_card"])
+		out.append({
+			"trick_number": entry["trick_number"],
+			"winning_team": entry["winning_team"],
+			"winning_card": winning_card,
+			"cards_played": cards_played,
+		})
+	return out
 
 func _err(peer_id: int, error_code: String) -> Array:
 	return [[peer_id, Protocol.msg(Protocol.MSG_ERROR, {
