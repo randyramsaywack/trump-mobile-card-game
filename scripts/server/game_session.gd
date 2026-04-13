@@ -22,6 +22,9 @@ var _team_dealer: Dictionary = {0: 0, 1: 1}
 ## Set true when RoundManager finishes a round; cleared when host calls
 ## handle_next_round. Gates `play_card`/`declare_trump` during the window
 ## where the client is showing the win screen.
+## Task 6 note: if the host disconnects while this is true, host migration
+## must keep the flag intact so the new host can drive handle_next_round —
+## do NOT auto-clear on disconnect.
 var between_rounds: bool = false
 
 ## Tuple buffer: each entry is [peer_id:int, message:Dictionary]. Signal
