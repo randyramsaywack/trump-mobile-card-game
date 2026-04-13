@@ -76,19 +76,37 @@ static func msg(type: String, data: Dictionary = {}) -> Dictionary:
 	return {"type": type, "data": data}
 
 ## Serialize a Card to the wire-format dict {suit:int, rank:int}.
+## Returns an empty dict if `card` is null — callers should avoid passing null.
 static func card_to_dict(card: Card) -> Dictionary:
+	if card == null:
+		return {}
 	return {"suit": int(card.suit), "rank": int(card.rank)}
 
 ## Deserialize a {suit, rank} dict back into a Card. Returns null on bad input.
+## Validates types and enum ranges so server-authoritative code can trust the
+## result without additional guards.
 static func dict_to_card(d: Dictionary) -> Card:
 	if not d.has("suit") or not d.has("rank"):
 		return null
-	return Card.new(int(d["suit"]) as Card.Suit, int(d["rank"]) as Card.Rank)
+	var suit_val = d["suit"]
+	var rank_val = d["rank"]
+	if typeof(suit_val) != TYPE_INT or typeof(rank_val) != TYPE_INT:
+		return null
+	var s := int(suit_val)
+	var r := int(rank_val)
+	if s < int(Card.Suit.SPADES) or s > int(Card.Suit.CLUBS):
+		return null
+	if r < int(Card.Rank.TWO) or r > int(Card.Rank.ACE):
+		return null
+	return Card.new(s as Card.Suit, r as Card.Rank)
 
-## Build a list of card dicts from an Array[Card].
+## Build a list of card dicts from an Array[Card]. Non-Card entries are
+## skipped with a warning — an untyped Array here usually signals a bug.
 static func cards_to_dicts(cards: Array) -> Array:
 	var out: Array = []
 	for c in cards:
 		if c is Card:
 			out.append(card_to_dict(c as Card))
+		else:
+			push_warning("Protocol.cards_to_dicts: skipping non-Card entry")
 	return out
