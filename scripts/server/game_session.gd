@@ -66,6 +66,51 @@ func setup_players(room_players: Array) -> void:
 			players[s] = ai
 			seat_display_names[s] = AI_SEAT_NAMES[s]
 
+func handle_declare_trump(peer_id: int, data: Dictionary) -> Array:
+	var seat := _seat_for_peer(peer_id)
+	if seat < 0:
+		return _err(peer_id, Protocol.ERR_NOT_IN_GAME)
+	if round_manager.state != RoundManager.RoundState.TRUMP_SELECTION:
+		return _err(peer_id, Protocol.ERR_WRONG_PHASE)
+	if seat != round_manager.trump_selector_seat:
+		return _err(peer_id, Protocol.ERR_NOT_YOUR_TURN)
+	var suit_int := int(data.get("suit", -1))
+	if suit_int < 0 or suit_int > 3:
+		return _err(peer_id, Protocol.ERR_INVALID_CARD)
+	round_manager.declare_trump(suit_int as Card.Suit)
+	return drain_events()
+
+func handle_play_card(peer_id: int, data: Dictionary) -> Array:
+	var seat := _seat_for_peer(peer_id)
+	if seat < 0:
+		return _err(peer_id, Protocol.ERR_NOT_IN_GAME)
+	if round_manager.state != RoundManager.RoundState.PLAYER_TURN:
+		return _err(peer_id, Protocol.ERR_WRONG_PHASE)
+	if seat != round_manager.current_player_seat:
+		return _err(peer_id, Protocol.ERR_NOT_YOUR_TURN)
+	var card_dict := data.get("card", {}) as Dictionary
+	var requested := Protocol.dict_to_card(card_dict)
+	if requested == null:
+		return _err(peer_id, Protocol.ERR_INVALID_CARD)
+	# Find the actual Card instance in the player's hand matching suit+rank —
+	# RoundManager.play_card uses object identity for removal.
+	var owned: Card = null
+	for c in players[seat].hand.cards:
+		if c.suit == requested.suit and c.rank == requested.rank:
+			owned = c
+			break
+	if owned == null:
+		return _err(peer_id, Protocol.ERR_INVALID_CARD)
+	# Defence in depth: reject cards that violate follow-suit.
+	var valid := players[seat].hand.get_valid_cards(
+		round_manager.current_trick.led_suit,
+		round_manager.trump_suit,
+	)
+	if owned not in valid:
+		return _err(peer_id, Protocol.ERR_INVALID_CARD)
+	round_manager.play_card(seat, owned)
+	return drain_events()
+
 func start_first_round() -> Array:
 	dealer_seat = randi() % 4
 	# The initial random dealer belongs to one team; record it as that team's
@@ -137,11 +182,18 @@ func _on_trump_declared(suit: int) -> void:
 func _on_turn_started(seat_index: int, _valid_cards: Array) -> void:
 	_append_to_all(Protocol.msg(Protocol.MSG_TURN_STARTED, {"seat_index": seat_index}))
 
-func _on_card_played(_seat_index: int, _card: Card) -> void:
-	pass
+func _on_card_played(seat_index: int, card: Card) -> void:
+	_append_to_all(Protocol.msg(Protocol.MSG_CARD_PLAYED, {
+		"seat_index": seat_index,
+		"card": Protocol.card_to_dict(card),
+	}))
 
-func _on_trick_completed(_winner_seat: int, _books: Array, _books_by_seat: Array) -> void:
-	pass
+func _on_trick_completed(winner_seat: int, books: Array, books_by_seat: Array) -> void:
+	_append_to_all(Protocol.msg(Protocol.MSG_TRICK_COMPLETED, {
+		"winner_seat": winner_seat,
+		"books": books.duplicate(),
+		"books_by_seat": books_by_seat.duplicate(),
+	}))
 
 func _on_round_ended(_winning_team: int) -> void:
 	pass
