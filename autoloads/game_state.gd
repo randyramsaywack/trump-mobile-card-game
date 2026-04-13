@@ -92,8 +92,14 @@ func _rotate_dealer(losing_team: int) -> void:
 func start_next_round() -> void:
 	_start_round()
 
-## Convenience accessors for UI scripts
+## Convenience accessors for UI scripts. In multiplayer, players live on the
+## NetGameView (indexed by display seat, so seat 0 is always the local player).
 func get_player(seat: int) -> Player:
+	if multiplayer_mode and game_source is NetGameView:
+		var view := game_source as NetGameView
+		if seat >= 0 and seat < view.players.size():
+			return view.players[seat]
+		return null
 	if seat >= 0 and seat < players.size():
 		return players[seat]
 	return null

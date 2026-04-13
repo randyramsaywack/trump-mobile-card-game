@@ -893,7 +893,11 @@ func _finalize_trick_collection(cards: Array, books: Array, seat_books: Array = 
 
 func _on_round_ended(winning_team: int) -> void:
 	AudioManager.play("round_win" if winning_team == 0 else "round_loss")
-	var wins := GameState.session_wins
+	var wins: Array
+	if _is_mp():
+		wins = (_source() as NetGameView).session_wins
+	else:
+		wins = GameState.session_wins
 	session_label.text = "Session: %d–%d" % [wins[0], wins[1]]
 	if _win_screen_overlay != null:
 		_win_screen_overlay.call("show_result", winning_team, wins)

@@ -31,8 +31,18 @@ enum RoundState {
 }
 
 var state: int = RoundState.IDLE
-var local_seat: int = -1
-var players: Array[Player] = []            # seat 0..3; only local player holds real cards
+
+## The local player's true seat on the server (0..3). Used only internally
+## to rotate incoming events so the UI always sees the local player at
+## display seat 0 — matching single-player's "you are always seat 0"
+## assumption. Set by NetworkState._begin_multiplayer_session BEFORE any
+## events are applied.
+var _server_local_seat: int = 0
+
+## Always 0 in display-seat terms once a session is live. Exposed as a
+## public field because some call sites read game_source.local_seat.
+var local_seat: int = 0
+var players: Array[Player] = []            # display seat 0..3; only players[0] holds real cards
 var trump_suit: Card.Suit = Card.Suit.SPADES
 var dealer_seat: int = 0
 var trump_selector_seat: int = 0
@@ -44,6 +54,44 @@ var trick_history: Array[Dictionary] = []
 var session_wins: Array[int] = [0, 0]
 var seat_usernames: Array[String] = ["", "", "", ""]
 var seat_is_ai: Array[bool] = [false, false, false, false]
+
+# ── Seat-rotation helpers ─────────────────────────────────────────────────────
+# Server seats are absolute (0..3). The UI was built for single-player where
+# seat 0 is always the human, so we rotate every incoming seat index by
+# `_server_local_seat` to present local at display seat 0.
+
+func _to_display_seat(server_seat: int) -> int:
+	return (server_seat - _server_local_seat + 4) % 4
+
+## Server teams: team 0 = seats 0 & 2, team 1 = seats 1 & 3. If the local
+## player sits on an odd server seat, local is on server-team 1 but must be
+## display-team 0 (your team = team 0), so we swap.
+func _to_display_team(server_team: int) -> int:
+	if _server_local_seat % 2 == 0:
+		return server_team
+	return 1 - server_team
+
+## Rotate a length-4 seat-indexed array so result[display_seat] == input[server_seat].
+func _rotate_seat_array(server_array: Array) -> Array:
+	var out: Array = [null, null, null, null]
+	for s in 4:
+		out[_to_display_seat(s)] = server_array[s]
+	return out
+
+## Rotate a seat-indexed int array into a typed Array[int].
+func _rotate_seat_int_array(server_array: Array) -> Array[int]:
+	var out: Array[int] = [0, 0, 0, 0]
+	for s in 4:
+		out[_to_display_seat(s)] = int(server_array[s])
+	return out
+
+## Swap a 2-element team array if the local player is on an odd team.
+func _swap_team_array(server_array: Array) -> Array[int]:
+	var a := int(server_array[0])
+	var b := int(server_array[1])
+	if _server_local_seat % 2 == 0:
+		return [a, b]
+	return [b, a]
 
 ## Unused fields kept for API parity with RoundManager. UI reads these
 ## without ever seeing `null`.
@@ -117,21 +165,22 @@ func _apply_session_start(data: Dictionary) -> void:
 	seat_is_ai = [false, false, false, false]
 	players.resize(4)
 	for entry in seats:
-		var seat := int(entry["seat"])
+		var server_seat := int(entry["seat"])
+		var display_seat := _to_display_seat(server_seat)
 		var username := String(entry["username"])
 		var is_ai := bool(entry["is_ai"])
-		seat_usernames[seat] = username
-		seat_is_ai[seat] = is_ai
+		seat_usernames[display_seat] = username
+		seat_is_ai[display_seat] = is_ai
 		# All seats get a placeholder Player so round_manager-style code paths
-		# (hand.size() etc.) work. Only the local seat's hand is ever populated
-		# with real Card objects; the others stay empty.
-		players[seat] = Player.new(seat, username, seat == local_seat)
-	dealer_seat = int(data.get("starting_dealer_seat", 0))
-	session_wins = (data.get("session_wins", [0, 0]) as Array).duplicate()
+		# (hand.size() etc.) work. Only display seat 0 — the local player —
+		# ever has real Card objects; the others stay empty.
+		players[display_seat] = Player.new(display_seat, username, display_seat == 0)
+	dealer_seat = _to_display_seat(int(data.get("starting_dealer_seat", 0)))
+	session_wins = _swap_team_array(data.get("session_wins", [0, 0]) as Array)
 
 func _apply_round_starting(data: Dictionary) -> void:
-	dealer_seat = int(data.get("dealer_seat", 0))
-	trump_selector_seat = int(data.get("trump_selector_seat", (dealer_seat + 1) % 4))
+	dealer_seat = _to_display_seat(int(data.get("dealer_seat", 0)))
+	trump_selector_seat = _to_display_seat(int(data.get("trump_selector_seat", (dealer_seat + 1) % 4)))
 	state = RoundState.DEALING_INITIAL
 	books = [0, 0]
 	books_by_seat = [0, 0, 0, 0]
@@ -143,29 +192,29 @@ func _apply_round_starting(data: Dictionary) -> void:
 	round_starting.emit(dealer_seat, trump_selector_seat)
 
 func _apply_hand_dealt(data: Dictionary) -> void:
-	var seat := int(data["seat_index"])
+	var display_seat := _to_display_seat(int(data["seat_index"]))
 	var count := int(data.get("count", 0))
 	var real_cards: Array[Card] = []
 	if data.has("cards"):
 		for d in data["cards"]:
 			real_cards.append(Protocol.dict_to_card(d as Dictionary))
-	if seat == local_seat and not real_cards.is_empty():
-		players[seat].hand.add_cards(real_cards)
-		hand_dealt.emit(seat, real_cards)
+	if display_seat == 0 and not real_cards.is_empty():
+		players[0].hand.add_cards(real_cards)
+		hand_dealt.emit(0, real_cards)
 	else:
 		# Other seats: synthesize `count` placeholder cards so the UI's
 		# face-down rendering (which iterates the array by length) still works.
 		var placeholders: Array = []
 		for i in count:
 			placeholders.append(null)
-		hand_dealt.emit(seat, placeholders)
+		hand_dealt.emit(display_seat, placeholders)
 
 func _apply_trump_selection_needed(data: Dictionary) -> void:
 	state = RoundState.TRUMP_SELECTION
-	trump_selector_seat = int(data["seat_index"])
+	trump_selector_seat = _to_display_seat(int(data["seat_index"]))
 	var initial_cards: Array = []
-	if trump_selector_seat == local_seat:
-		initial_cards = players[local_seat].hand.cards.duplicate()
+	if trump_selector_seat == 0:
+		initial_cards = players[0].hand.cards.duplicate()
 	trump_selection_needed.emit(trump_selector_seat, initial_cards)
 
 func _apply_trump_declared(data: Dictionary) -> void:
@@ -174,55 +223,56 @@ func _apply_trump_declared(data: Dictionary) -> void:
 	trump_declared.emit(trump_suit)
 
 func _apply_turn_started(data: Dictionary) -> void:
-	current_player_seat = int(data["seat_index"])
+	current_player_seat = _to_display_seat(int(data["seat_index"]))
 	if current_trick == null:
 		current_trick = Trick.new(trump_suit)
 	state = RoundState.PLAYER_TURN
 	var valid: Array[Card] = []
-	if current_player_seat == local_seat and local_seat >= 0:
-		valid = players[local_seat].hand.get_valid_cards(
+	if current_player_seat == 0:
+		valid = players[0].hand.get_valid_cards(
 			current_trick.led_suit, trump_suit
 		)
 	turn_started.emit(current_player_seat, valid)
 
 func _apply_card_played(data: Dictionary) -> void:
-	var seat := int(data["seat_index"])
+	var display_seat := _to_display_seat(int(data["seat_index"]))
 	var card := Protocol.dict_to_card(data["card"] as Dictionary)
 	if current_trick == null:
 		current_trick = Trick.new(trump_suit)
 	# Local player: remove the matching card from the real hand.
-	if seat == local_seat and local_seat >= 0:
-		for c in players[local_seat].hand.cards:
+	if display_seat == 0:
+		for c in players[0].hand.cards:
 			if c.suit == card.suit and c.rank == card.rank:
-				players[local_seat].hand.remove_card(c)
+				players[0].hand.remove_card(c)
 				break
-	current_trick.play_card(seat, card)
-	card_played_signal.emit(seat, card)
+	current_trick.play_card(display_seat, card)
+	card_played_signal.emit(display_seat, card)
 
 func _apply_trick_completed(data: Dictionary) -> void:
-	var winner_seat := int(data["winner_seat"])
-	books = (data.get("books", [0, 0]) as Array).duplicate()
-	books_by_seat = (data.get("books_by_seat", [0, 0, 0, 0]) as Array).duplicate()
+	var winner_seat := _to_display_seat(int(data["winner_seat"]))
+	books = _swap_team_array(data.get("books", [0, 0]) as Array)
+	books_by_seat = _rotate_seat_int_array(data.get("books_by_seat", [0, 0, 0, 0]) as Array)
 	current_trick = null
 	state = RoundState.TRICK_DISPLAY
 	trick_completed.emit(winner_seat, books, books_by_seat)
 
 func _apply_round_ended(data: Dictionary) -> void:
-	var winning_team := int(data["winning_team"])
-	session_wins = (data.get("session_wins", session_wins) as Array).duplicate()
+	var winning_team := _to_display_team(int(data["winning_team"]))
+	if data.has("session_wins"):
+		session_wins = _swap_team_array(data["session_wins"] as Array)
 	trick_history = _deserialize_trick_history(data.get("trick_history", []) as Array)
 	state = RoundState.ROUND_OVER
 	round_ended.emit(winning_team)
 
 func _apply_seat_taken_over(data: Dictionary) -> void:
-	var seat := int(data["seat_index"])
+	var display_seat := _to_display_seat(int(data["seat_index"]))
 	var display_name := String(data.get("display_name", ""))
 	var reason := String(data.get("reason", "disconnect"))
-	seat_is_ai[seat] = true
-	seat_usernames[seat] = display_name
-	if players.size() > seat and players[seat] != null:
-		players[seat].display_name = display_name
-	seat_taken_over_by_ai.emit(seat, display_name, reason)
+	seat_is_ai[display_seat] = true
+	seat_usernames[display_seat] = display_name
+	if players.size() > display_seat and players[display_seat] != null:
+		players[display_seat].display_name = display_name
+	seat_taken_over_by_ai.emit(display_seat, display_name, reason)
 
 func _deserialize_trick_history(raw: Array) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []

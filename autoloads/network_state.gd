@@ -196,7 +196,9 @@ func _handle_server_message(msg: Dictionary) -> void:
 
 func _begin_multiplayer_session(msg: Dictionary) -> void:
 	var view := NetGameView.new()
-	view.local_seat = local_seat
+	# Pass the server-absolute seat so NetGameView can rotate events; the UI
+	# then sees the local player at display seat 0.
+	view._server_local_seat = local_seat
 	GameState.set_multiplayer_source(view)
 	view.apply_event(msg)
 	# Defer so we don't change scenes inside the message-handling frame.
