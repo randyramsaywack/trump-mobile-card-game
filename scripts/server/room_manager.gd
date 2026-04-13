@@ -97,10 +97,19 @@ func handle_start_game(peer_id: int) -> Array:
 		return [_err_to(peer_id, Protocol.ERR_NOT_IN_ROOM)]
 	if room.host_id != peer_id:
 		return [_err_to(peer_id, Protocol.ERR_NOT_HOST)]
-	room.state = Room.State.STARTING
+	if room.players.size() < 2:
+		return [_err_to(peer_id, Protocol.ERR_ROOM_FULL)]
+	if room.state != Room.State.WAITING:
+		return [_err_to(peer_id, Protocol.ERR_ROOM_STARTED)]
+	room.state = Room.State.IN_GAME
+	room.game_session = GameSession.new(room.code)
+	room.game_session.setup_players(room.players)
+	# Keep the M1 game_starting broadcast for parity — clients currently
+	# ignore it but it still confirms the transition at the protocol level.
 	var out: Array = []
 	for p in room.players:
 		out.append([int(p["peer_id"]), Protocol.msg(Protocol.MSG_GAME_STARTING)])
+	out.append_array(room.game_session.start_first_round())
 	return out
 
 # ── disconnect path ───────────────────────────────────────────────────────────
