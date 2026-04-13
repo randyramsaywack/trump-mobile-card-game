@@ -55,6 +55,11 @@ var session_wins: Array[int] = [0, 0]
 var seat_usernames: Array[String] = ["", "", "", ""]
 var seat_is_ai: Array[bool] = [false, false, false, false]
 
+## Position labels used at every display seat in every mode. Display seat 0
+## is always the local player (NetGameView rotates incoming events, SP puts
+## the human at seat 0 directly), so this mapping is shared between SP and MP.
+const DISPLAY_SEAT_NAMES := ["You", "Left", "Partner", "Right"]
+
 # ── Seat-rotation helpers ─────────────────────────────────────────────────────
 # Server seats are absolute (0..3). The UI was built for single-player where
 # seat 0 is always the human, so we rotate every incoming seat index by
@@ -167,14 +172,17 @@ func _apply_session_start(data: Dictionary) -> void:
 	for entry in seats:
 		var server_seat := int(entry["seat"])
 		var display_seat := _to_display_seat(server_seat)
-		var username := String(entry["username"])
 		var is_ai := bool(entry["is_ai"])
-		seat_usernames[display_seat] = username
 		seat_is_ai[display_seat] = is_ai
+		# Display names are position-based ("You"/"Left"/"Partner"/"Right") so
+		# they match single-player. The server still sends real usernames but
+		# we intentionally drop them for consistency with SP's display model.
+		var label: String = DISPLAY_SEAT_NAMES[display_seat]
+		seat_usernames[display_seat] = label
 		# All seats get a placeholder Player so round_manager-style code paths
 		# (hand.size() etc.) work. Only display seat 0 — the local player —
 		# ever has real Card objects; the others stay empty.
-		players[display_seat] = Player.new(display_seat, username, display_seat == 0)
+		players[display_seat] = Player.new(display_seat, label, display_seat == 0)
 	dealer_seat = _to_display_seat(int(data.get("starting_dealer_seat", 0)))
 	session_wins = _swap_team_array(data.get("session_wins", [0, 0]) as Array)
 
@@ -266,13 +274,15 @@ func _apply_round_ended(data: Dictionary) -> void:
 
 func _apply_seat_taken_over(data: Dictionary) -> void:
 	var display_seat := _to_display_seat(int(data["seat_index"]))
-	var display_name := String(data.get("display_name", ""))
 	var reason := String(data.get("reason", "disconnect"))
 	seat_is_ai[display_seat] = true
-	seat_usernames[display_seat] = display_name
+	# Keep the position label — the UI appends an "(AI)" suffix itself so it
+	# stays consistent with the rest of the position-based naming scheme.
+	var label: String = DISPLAY_SEAT_NAMES[display_seat]
+	seat_usernames[display_seat] = label
 	if players.size() > display_seat and players[display_seat] != null:
-		players[display_seat].display_name = display_name
-	seat_taken_over_by_ai.emit(display_seat, display_name, reason)
+		players[display_seat].display_name = label
+	seat_taken_over_by_ai.emit(display_seat, label, reason)
 
 func _deserialize_trick_history(raw: Array) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []

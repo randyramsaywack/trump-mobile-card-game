@@ -122,7 +122,9 @@ func _exit_tree() -> void:
 	DisplayServer.screen_set_keep_on(false)
 
 func _refresh_south_name() -> void:
-	south_avatar.set_player_name(Settings.player_name)
+	# Local player is always labelled "You" in both SP and MP — the spec
+	# displays the human by position, not by username.
+	south_avatar.set_player_name("You")
 
 ## Reposition avatars above the actual first card in the side stacks.
 ## Called one frame after a dealing batch finishes so the VBoxContainer

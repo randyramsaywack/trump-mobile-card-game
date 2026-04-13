@@ -58,9 +58,9 @@ func start_session() -> void:
 func _setup_players() -> void:
 	players.clear()
 	players.append(Player.new(0, "You", true))       # human
-	players.append(AIPlayer.new(1, "West"))
-	players.append(AIPlayer.new(2, "North"))
-	players.append(AIPlayer.new(3, "East"))
+	players.append(AIPlayer.new(1, "Left"))
+	players.append(AIPlayer.new(2, "Partner"))
+	players.append(AIPlayer.new(3, "Right"))
 
 func _start_round() -> void:
 	# Apply current difficulty uniformly to all AIs before the round begins.
