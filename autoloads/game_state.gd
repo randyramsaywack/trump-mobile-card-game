@@ -5,6 +5,12 @@ signal round_started(dealer_seat: int, trump_selector_seat: int)
 signal round_ended_session(winning_team: int, session_wins: Array)
 
 var round_manager: RoundManager
+## Abstract game source for the UI: either round_manager (single-player) or
+## a NetGameView (multiplayer). game_table_ui.gd reads from this — not
+## round_manager directly.
+var game_source: Node = null
+## True while a multiplayer session is active. Flipped by set_multiplayer_source.
+var multiplayer_mode: bool = false
 var players: Array[Player] = []
 var session_wins: Array[int] = [0, 0]  # [team0_wins, team1_wins]
 var dealer_seat: int = 0
@@ -23,12 +29,15 @@ var _team_dealer: Dictionary = {0: 0, 1: 1}  # team -> current dealer seat withi
 func _ready() -> void:
 	round_manager = RoundManager.new()
 	add_child(round_manager)
+	game_source = round_manager
 	round_manager.round_ended.connect(_on_round_ended)
 	# Single-player stats: track every trick and every round finish.
 	round_manager.trick_completed.connect(_on_trick_completed_stats)
 	round_manager.round_ended.connect(_on_round_ended_stats)
 
 func _process(delta: float) -> void:
+	if multiplayer_mode:
+		return
 	if round_manager != null:
 		round_manager.tick(delta)
 
@@ -91,6 +100,18 @@ func get_player(seat: int) -> Player:
 
 func get_round_manager() -> RoundManager:
 	return round_manager
+
+## Called by NetworkState when the server announces MSG_SESSION_START. Swaps
+## the UI's game source from round_manager to a fresh NetGameView.
+func set_multiplayer_source(view: NetGameView) -> void:
+	multiplayer_mode = true
+	game_source = view
+
+## Called by NetworkState when the client leaves a multiplayer session, or
+## main_menu_ui before starting a new single-player session.
+func clear_multiplayer_source() -> void:
+	multiplayer_mode = false
+	game_source = round_manager
 
 func get_books() -> Array:
 	return round_manager.books.duplicate()
