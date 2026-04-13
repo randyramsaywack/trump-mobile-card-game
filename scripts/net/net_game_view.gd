@@ -48,13 +48,40 @@ var seat_is_ai: Array[bool] = [false, false, false, false]
 var menu_paused: bool = false
 var deal_paused: bool = false
 
+## Event buffering. The server dispatches the initial burst of session-start
+## messages (MSG_SESSION_START + MSG_ROUND_STARTING + MSG_HAND_DEALT ×4 +
+## MSG_TRUMP_SELECTION_NEEDED) in a single packet flight. NetworkState processes
+## all of them in one _process tick, but the scene change to game_table.tscn is
+## deferred — so signals emitted during apply_event() would fire into a void.
+## We queue events here until game_table_ui._ready() calls begin_live().
+var _event_queue: Array[Dictionary] = []
+var _live: bool = false
+
 func tick(_delta: float) -> void:
 	# No-op on the client — the server drives timing. Kept so game_state
 	# can call tick(delta) uniformly on either source.
 	pass
 
 ## Primary entry point: consume a server message and mutate state.
+## Before begin_live() is called, events are buffered and replayed in order.
 func apply_event(msg: Dictionary) -> void:
+	if not _live:
+		_event_queue.append(msg)
+		return
+	_dispatch_event(msg)
+
+## Called by game_table_ui._ready() after all signal listeners are wired up.
+## Drains any buffered events in the order they arrived.
+func begin_live() -> void:
+	if _live:
+		return
+	_live = true
+	var drain := _event_queue
+	_event_queue = []
+	for msg in drain:
+		_dispatch_event(msg)
+
+func _dispatch_event(msg: Dictionary) -> void:
 	var type := String(msg.get("type", ""))
 	var data := msg.get("data", {}) as Dictionary
 	match type:

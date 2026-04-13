@@ -110,6 +110,11 @@ func _ready() -> void:
 	DisplayServer.screen_set_keep_on(true)
 	if not GameState.multiplayer_mode:
 		GameState.start_session()
+	else:
+		# Flush any server events buffered while the scene was swapping in.
+		var src = GameState.game_source
+		if src is NetGameView:
+			(src as NetGameView).begin_live()
 	_refresh_opponent_names()
 
 func _exit_tree() -> void:
