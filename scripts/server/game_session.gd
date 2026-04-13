@@ -68,11 +68,11 @@ func setup_players(room_players: Array) -> void:
 
 func start_first_round() -> Array:
 	dealer_seat = randi() % 4
-	# The initial random dealer belongs to one team; that seat is that team's
-	# current dealer. The other team gets its lower-index seat as a default.
+	# The initial random dealer belongs to one team; record it as that team's
+	# current dealer. The other team keeps its default (seat 0 for team 0,
+	# seat 1 for team 1) from the `_team_dealer` field init.
 	var starting_team := 0 if dealer_seat in [0, 2] else 1
 	_team_dealer[starting_team] = dealer_seat
-	_team_dealer[1 - starting_team] = 0 if starting_team == 1 else 1
 	_append_session_start()
 	_start_round()
 	return drain_events()
