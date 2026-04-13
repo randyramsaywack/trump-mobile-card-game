@@ -10,6 +10,14 @@ extends Node
 ## server, every subsequent F5 is a client.
 
 func _ready() -> void:
+	# Mobile builds are always clients — never race for the server port.
+	# The dedicated server only runs on desktop/headless on the Proxmox VM.
+	var platform := OS.get_name()
+	if platform == "iOS" or platform == "Android":
+		print("[bootstrap] Platform %s — running as CLIENT" % platform)
+		get_tree().change_scene_to_file.call_deferred("res://scenes/main_menu.tscn")
+		return
+
 	var peer := ENetMultiplayerPeer.new()
 	var err := peer.create_server(Protocol.SERVER_PORT, Protocol.MAX_PEERS)
 	if err == OK:
