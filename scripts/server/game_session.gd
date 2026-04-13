@@ -274,6 +274,11 @@ func _swap_to_ai(peer_id: int, reason: String) -> Array:
 	if seat < 0:
 		return []
 	var old := players[seat] as Player
+	# Defence in depth: if a future caller forgets to check peer identity,
+	# don't stack a second AI over an existing one.
+	if old is AIPlayer:
+		peer_to_seat.erase(peer_id)
+		return []
 	var display_name := old.display_name
 	var ai := AIPlayer.new(seat, display_name)
 	ai.difficulty = AIPlayer.Difficulty.MEDIUM
@@ -286,7 +291,6 @@ func _swap_to_ai(peer_id: int, reason: String) -> Array:
 	if round_manager.players.size() > seat:
 		round_manager.players[seat] = ai
 	peer_to_seat.erase(peer_id)
-	seat_display_names[seat] = display_name
 	_append_to_all(Protocol.msg(Protocol.MSG_SEAT_TAKEN_OVER_BY_AI, {
 		"seat_index": seat,
 		"reason": reason,
