@@ -103,20 +103,24 @@ func _ready() -> void:
 	add_child(_history_overlay)
 	history_button.pressed.connect(_on_history_button_pressed)
 	toast_label.visible = false
-	_refresh_south_name()
-	Settings.changed.connect(_refresh_south_name)
+	# Local player is always labelled "You" in both SP and MP — the spec
+	# displays the human by position, not by username.
+	south_avatar.set_player_name("You")
 	# Mobile: keep the display awake during play — AI turns + animations leave
 	# the human idle for long stretches that would otherwise trip screen sleep.
 	DisplayServer.screen_set_keep_on(true)
-	GameState.start_session()
+	if not GameState.multiplayer_mode:
+		GameState.start_session()
+	else:
+		# Flush any server events buffered while the scene was swapping in.
+		var src = GameState.game_source
+		if src is NetGameView:
+			(src as NetGameView).begin_live()
 	_refresh_opponent_names()
 
 func _exit_tree() -> void:
 	# Release the wake lock when leaving the game scene.
 	DisplayServer.screen_set_keep_on(false)
-
-func _refresh_south_name() -> void:
-	south_avatar.set_player_name(Settings.player_name)
 
 ## Reposition avatars above the actual first card in the side stacks.
 ## Called one frame after a dealing batch finishes so the VBoxContainer
@@ -186,14 +190,11 @@ func _notification(what: int) -> void:
 		NOTIFICATION_WM_GO_BACK_REQUEST:
 			_handle_back_request()
 		NOTIFICATION_APPLICATION_PAUSED:
-			var rm := GameState.get_round_manager()
-			if rm != null:
-				rm.menu_paused = true
+			_set_menu_paused(true)
 		NOTIFICATION_APPLICATION_RESUMED:
 			# Only auto-unpause if the settings overlay isn't the visible pauser.
-			var rm := GameState.get_round_manager()
-			if rm != null and not _settings_overlay.visible:
-				rm.menu_paused = false
+			if not _settings_overlay.visible:
+				_set_menu_paused(false)
 
 func _handle_back_request() -> void:
 	# Close any open overlay first; otherwise treat back as "open settings".
@@ -347,12 +348,38 @@ func _apply_trick_slot_layout() -> void:
 			slot.offset_top = origin.y
 			slot.offset_bottom = origin.y + h
 
+## Convenience pair — the source used for reads (signals, state fields) and
+## a flag indicating which action path to use on writes.
+func _source():
+	return GameState.game_source
+
+func _is_mp() -> bool:
+	return GameState.multiplayer_mode
+
+func _send_play(card: Card) -> void:
+	if _is_mp():
+		NetworkState.play_card(card)
+	else:
+		GameState.get_round_manager().play_card(0, card)
+
+func _set_deal_paused(value: bool) -> void:
+	var src = _source()
+	if src != null and "deal_paused" in src:
+		src.deal_paused = value
+
+func _set_menu_paused(value: bool) -> void:
+	if _is_mp():
+		return  # Server owns pause in MP.
+	var rm := GameState.get_round_manager()
+	if rm != null:
+		rm.menu_paused = value
+
 func _on_settings_button_pressed() -> void:
-	GameState.get_round_manager().menu_paused = true
+	_set_menu_paused(true)
 	_settings_overlay.visible = true
 
 func _on_settings_closed() -> void:
-	GameState.get_round_manager().menu_paused = false
+	_set_menu_paused(false)
 
 ## Re-order the human's hand data array and reorder the bottom_hand children
 ## to match. No-op when the sort toggle is off.
@@ -374,19 +401,26 @@ func _on_history_button_pressed() -> void:
 	# Informational overlay — does NOT pause the game.
 	if _history_overlay == null:
 		return
-	var rm := GameState.get_round_manager()
-	_history_overlay.call("show_history", rm.trick_history)
+	var src = _source()
+	_history_overlay.call("show_history", src.trick_history)
 
 func _connect_signals() -> void:
-	var rm := GameState.get_round_manager()
-	rm.hand_dealt.connect(_on_hand_dealt)
-	rm.trump_selection_needed.connect(_on_trump_selection_needed)
-	rm.trump_declared.connect(_on_trump_declared)
-	rm.turn_started.connect(_on_turn_started)
-	rm.card_played_signal.connect(_on_card_played)
-	rm.trick_completed.connect(_on_trick_completed)
-	rm.round_ended.connect(_on_round_ended)
-	GameState.round_started.connect(_on_round_started)
+	var src = _source()
+	src.hand_dealt.connect(_on_hand_dealt)
+	src.trump_selection_needed.connect(_on_trump_selection_needed)
+	src.trump_declared.connect(_on_trump_declared)
+	src.turn_started.connect(_on_turn_started)
+	src.card_played_signal.connect(_on_card_played)
+	src.trick_completed.connect(_on_trick_completed)
+	src.round_ended.connect(_on_round_ended)
+	if _is_mp():
+		# NetGameView drives round start via round_starting, not GameState.
+		src.round_starting.connect(_on_round_started)
+		src.seat_taken_over_by_ai.connect(_on_seat_taken_over_by_ai)
+		NetworkState.error_received.connect(_on_mp_error_received)
+		NetworkState.connection_state_changed.connect(_on_mp_connection_changed)
+	else:
+		GameState.round_started.connect(_on_round_started)
 
 func _get_hand_container(seat: int) -> BoxContainer:
 	# Seats are clockwise from the human: 0=South, 1=West, 2=North, 3=East.
@@ -425,7 +459,7 @@ func _maybe_start_deal() -> void:
 func _process_deal_queue() -> void:
 	if _deal_queue.is_empty():
 		_deal_busy = false
-		GameState.get_round_manager().deal_paused = false
+		_set_deal_paused(false)
 		if _awaiting_final_deal:
 			_awaiting_final_deal = false
 			_initial_deal_done = true
@@ -606,7 +640,7 @@ func _on_trump_declared(suit: Card.Suit) -> void:
 	_pending_trump_selection.clear()
 	_awaiting_final_deal = true
 	# Pause again while the 47 remaining cards animate out.
-	GameState.get_round_manager().deal_paused = true
+	_set_deal_paused(true)
 	if _trump_selector_overlay != null:
 		_trump_selector_overlay.call("animate_hide")
 	trump_label.text = "Trump: " + Card.SUIT_NAMES[suit] + " " + Card.SUIT_SYMBOLS[suit]
@@ -671,7 +705,7 @@ func _auto_play_last_card(card: Card) -> void:
 	if _round_gen != gen:
 		toast_label.visible = false
 		return
-	GameState.get_round_manager().play_card(0, card)
+	_send_play(card)
 	# Leave the toast up briefly after the play fires.
 	var remaining := AUTO_PLAY_TOAST_DURATION - AUTO_PLAY_DELAY
 	if remaining > 0.0:
@@ -710,7 +744,7 @@ func _on_card_play_requested(card: Card) -> void:
 		_deselect_current()
 	_selected_card = null
 	_reset_hand_state()
-	GameState.get_round_manager().play_card(0, card)
+	_send_play(card)
 
 func _select_in_hand(card: Card) -> void:
 	for child in bottom_hand.get_children():
@@ -751,7 +785,7 @@ func _confirm_play() -> void:
 	var card := _selected_card
 	_selected_card = null
 	_reset_hand_state()
-	GameState.get_round_manager().play_card(0, card)
+	_send_play(card)
 
 func _reset_hand_state() -> void:
 	for child in bottom_hand.get_children():
@@ -775,7 +809,11 @@ func _on_card_played(seat: int, card: Card) -> void:
 	var found := false
 	if container != null:
 		for child in container.get_children():
-			if child.get("card_data") == card:
+			var existing: Card = child.get("card_data")
+			# Compare by value, not identity: in multiplayer the Card instance
+			# from the server event is freshly deserialized and will never be
+			# the same object as the one bound to the card node.
+			if existing != null and existing.suit == card.suit and existing.rank == card.rank:
 				start_global = (child as Control).global_position
 				child.queue_free()
 				found = true
@@ -857,7 +895,11 @@ func _finalize_trick_collection(cards: Array, books: Array, seat_books: Array = 
 
 func _on_round_ended(winning_team: int) -> void:
 	AudioManager.play("round_win" if winning_team == 0 else "round_loss")
-	var wins := GameState.session_wins
+	var wins: Array
+	if _is_mp():
+		wins = (_source() as NetGameView).session_wins
+	else:
+		wins = GameState.session_wins
 	session_label.text = "Session: %d–%d" % [wins[0], wins[1]]
 	if _win_screen_overlay != null:
 		_win_screen_overlay.call("show_result", winning_team, wins)
@@ -885,6 +927,12 @@ func _clear_table() -> void:
 
 func _on_round_started(_dealer_seat: int, _trump_selector_seat: int) -> void:
 	_round_gen += 1
+	# Dismiss any stale win screen from the previous round. In SP this is
+	# already hidden locally when the Next Round button is pressed, but in MP
+	# only the host's press advances the round — non-host clients need the
+	# overlay torn down here so they don't stay stuck on the win screen.
+	if _win_screen_overlay != null:
+		_win_screen_overlay.visible = false
 	_deal_queue.clear()
 	_deal_busy = false
 	_shuffle_done = false
@@ -901,6 +949,36 @@ func _on_round_started(_dealer_seat: int, _trump_selector_seat: int) -> void:
 			(n as Node).queue_free()
 	_trick_cards_by_seat.clear()
 	_hide_trump_watermark()
-	GameState.get_round_manager().deal_paused = true
+	_set_deal_paused(true)
 	_clear_table()
 	_play_shuffle_animation()
+
+# ── Multiplayer-only event handlers ──────────────────────────────────────────
+
+func _on_seat_taken_over_by_ai(seat: int, display_name: String, reason: String) -> void:
+	var verb := "disconnected" if reason == "disconnect" else "left"
+	_show_toast("%s %s — AI taking over" % [display_name, verb])
+	var avatar = _get_avatar(seat)
+	if avatar != null and avatar.has_method("set_player_name"):
+		avatar.set_player_name(display_name + " (AI)")
+
+func _on_mp_error_received(code: String, _message: String) -> void:
+	if code == Protocol.ERR_HOST_LEFT:
+		_show_toast("Host left the room")
+		get_tree().change_scene_to_file.call_deferred("res://scenes/main_menu.tscn")
+
+func _on_mp_connection_changed(state: int) -> void:
+	if state == NetworkState.ConnectionState.DISCONNECTED:
+		_show_toast("Disconnected from server")
+		get_tree().change_scene_to_file.call_deferred("res://scenes/main_menu.tscn")
+
+func _show_toast(text: String) -> void:
+	if toast_label == null:
+		return
+	toast_label.text = text
+	toast_label.modulate.a = 1.0
+	toast_label.visible = true
+	var tw := create_tween()
+	tw.tween_interval(1.8)
+	tw.tween_property(toast_label, "modulate:a", 0.0, 0.3)
+	tw.tween_callback(func(): toast_label.visible = false)

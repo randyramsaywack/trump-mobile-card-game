@@ -87,6 +87,12 @@ func handle_leave_room(peer_id: int) -> Array:
 	var room := room_for_peer(peer_id)
 	if room == null:
 		return []
+	# Host leaving always collapses the room, even mid-game.
+	if room.host_id == peer_id:
+		return _remove_peer_from_room(peer_id, room)
+	# Non-host during an active game: swap seat to AI instead of removing.
+	if room.game_session != null:
+		return _on_non_host_exit(room, peer_id, "left")
 	return _remove_peer_from_room(peer_id, room)
 
 # ── start_game ────────────────────────────────────────────────────────────────
@@ -97,10 +103,21 @@ func handle_start_game(peer_id: int) -> Array:
 		return [_err_to(peer_id, Protocol.ERR_NOT_IN_ROOM)]
 	if room.host_id != peer_id:
 		return [_err_to(peer_id, Protocol.ERR_NOT_HOST)]
-	room.state = Room.State.STARTING
+	if room.players.size() < 2:
+		return [_err_to(peer_id, Protocol.ERR_NOT_ENOUGH_PLAYERS)]
+	if room.state != Room.State.WAITING:
+		return [_err_to(peer_id, Protocol.ERR_ROOM_STARTED)]
+	# Construct the session first so a failure there leaves the room in
+	# WAITING and the host can retry without hitting ERR_ROOM_STARTED.
+	room.game_session = GameSession.new(room.code)
+	room.game_session.setup_players(room.players)
+	room.state = Room.State.IN_GAME
+	# Keep the M1 game_starting broadcast for parity — clients currently
+	# ignore it but it still confirms the transition at the protocol level.
 	var out: Array = []
 	for p in room.players:
 		out.append([int(p["peer_id"]), Protocol.msg(Protocol.MSG_GAME_STARTING)])
+	out.append_array(room.game_session.start_first_round())
 	return out
 
 # ── disconnect path ───────────────────────────────────────────────────────────
@@ -112,7 +129,44 @@ func handle_disconnect(peer_id: int) -> Array:
 	var room := room_for_peer(peer_id)
 	if room == null:
 		return []
+	if room.host_id == peer_id:
+		return _remove_peer_from_room(peer_id, room)
+	if room.game_session != null:
+		return _on_non_host_exit(room, peer_id, "disconnect")
 	return _remove_peer_from_room(peer_id, room)
+
+# ── Game-loop delegators ──────────────────────────────────────────────────────
+
+func handle_play_card(peer_id: int, data: Dictionary) -> Array:
+	var room := room_for_peer(peer_id)
+	if room == null or room.game_session == null:
+		return [_err_to(peer_id, Protocol.ERR_NOT_IN_GAME)]
+	return room.game_session.handle_play_card(peer_id, data)
+
+func handle_declare_trump(peer_id: int, data: Dictionary) -> Array:
+	var room := room_for_peer(peer_id)
+	if room == null or room.game_session == null:
+		return [_err_to(peer_id, Protocol.ERR_NOT_IN_GAME)]
+	return room.game_session.handle_declare_trump(peer_id, data)
+
+func handle_next_round(peer_id: int) -> Array:
+	var room := room_for_peer(peer_id)
+	if room == null or room.game_session == null:
+		return [_err_to(peer_id, Protocol.ERR_NOT_IN_GAME)]
+	return room.game_session.handle_next_round(peer_id, room.host_id == peer_id)
+
+# ── Per-frame ─────────────────────────────────────────────────────────────────
+
+## Called every frame by main_server._process. Drives every active game
+## session so AI delays, trick display countdowns, and other async events
+## produce outgoing messages.
+func tick(delta: float) -> Array:
+	var out: Array = []
+	for code in _rooms.keys():
+		var room: Room = _rooms[code]
+		if room.game_session != null:
+			out.append_array(room.game_session.tick(delta))
+	return out
 
 # ── internal helpers ──────────────────────────────────────────────────────────
 
@@ -133,6 +187,25 @@ func _remove_peer_from_room(peer_id: int, room: Room) -> Array:
 		_rooms.erase(room.code)
 		return out
 	out.append_array(_broadcast_room_state(room))
+	return out
+
+## Shared path for non-host disconnect or voluntary leave during an active
+## game. Swaps the seat to AI. If zero humans remain, destroys the room.
+func _on_non_host_exit(room: Room, peer_id: int, reason: String) -> Array:
+	var out: Array
+	if reason == "disconnect":
+		out = room.game_session.handle_player_disconnect(peer_id)
+	else:
+		out = room.game_session.handle_player_leave(peer_id)
+	_peer_to_room.erase(peer_id)
+	# Keep room.players in sync — the seat entry becomes "AI" with the old
+	# username but zero peer_id so future lookups can't match.
+	for i in room.players.size():
+		if int(room.players[i]["peer_id"]) == peer_id:
+			room.players[i]["peer_id"] = 0
+			break
+	if not room.game_session.has_humans():
+		_rooms.erase(room.code)
 	return out
 
 func _broadcast_room_state(room: Room, exclude_peer_id: int = -1) -> Array:

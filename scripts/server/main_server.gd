@@ -24,9 +24,12 @@ func _ready() -> void:
 	_log("Server listening on port %d" % Protocol.SERVER_PORT)
 	get_window().title = "Trump — SERVER :%d" % Protocol.SERVER_PORT
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _peer == null:
 		return
+	# Drain any outgoing messages accumulated since last frame by active
+	# game sessions (AI plays, trick display timer transitions, etc.).
+	_dispatch_outgoing(_rooms.tick(delta))
 	_peer.poll()
 	while _peer.get_available_packet_count() > 0:
 		var sender := _peer.get_packet_peer()
@@ -63,6 +66,12 @@ func _handle(sender: int, msg: Dictionary) -> void:
 			_require_registered(sender, func(): _dispatch_outgoing(_rooms.handle_leave_room(sender)))
 		Protocol.MSG_START_GAME:
 			_require_registered(sender, func(): _dispatch_outgoing(_rooms.handle_start_game(sender)))
+		Protocol.MSG_PLAY_CARD:
+			_require_registered(sender, func(): _dispatch_outgoing(_rooms.handle_play_card(sender, data)))
+		Protocol.MSG_DECLARE_TRUMP:
+			_require_registered(sender, func(): _dispatch_outgoing(_rooms.handle_declare_trump(sender, data)))
+		Protocol.MSG_NEXT_ROUND:
+			_require_registered(sender, func(): _dispatch_outgoing(_rooms.handle_next_round(sender)))
 		_:
 			_log("DROP peer=%d unknown type=%s" % [sender, type])
 

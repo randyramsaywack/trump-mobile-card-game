@@ -3,11 +3,12 @@ extends RefCounted
 
 ## A single waiting-room's state. Lives on the server only.
 
-enum State { WAITING, STARTING }
+enum State { WAITING, STARTING, IN_GAME, BETWEEN_ROUNDS }
 
 var code: String = ""
 var host_id: int = 0
 var state: int = State.WAITING
+var game_session: GameSession = null
 ## Array of player dicts: {peer_id:int, username:String, seat:int, is_host:bool}
 var players: Array = []
 

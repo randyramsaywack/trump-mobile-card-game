@@ -65,6 +65,7 @@ func disconnect_from_server() -> void:
 	if _client_peer != null:
 		_client_peer.close()
 		_client_peer = null
+	GameState.clear_multiplayer_source()
 	_clear_room()
 	_set_connection_state(ConnectionState.DISCONNECTED)
 
@@ -82,6 +83,7 @@ func _process(_delta: float) -> void:
 	if status == MultiplayerPeer.CONNECTION_DISCONNECTED:
 		if connection_state != ConnectionState.DISCONNECTED:
 			_client_peer = null
+			GameState.clear_multiplayer_source()
 			_clear_room()
 			_set_connection_state(ConnectionState.DISCONNECTED)
 			error_received.emit("DISCONNECTED", "Disconnected from server")
@@ -113,6 +115,7 @@ func leave_room() -> void:
 	if connection_state != ConnectionState.IN_ROOM:
 		return
 	send(Protocol.msg(Protocol.MSG_LEAVE_ROOM))
+	GameState.clear_multiplayer_source()
 	_clear_room()
 	_set_connection_state(ConnectionState.CONNECTED)
 
@@ -120,6 +123,23 @@ func start_game() -> void:
 	if not is_host:
 		return
 	send(Protocol.msg(Protocol.MSG_START_GAME))
+
+# ── Game actions (UI facade) ──────────────────────────────────────────────────
+
+func play_card(card: Card) -> void:
+	if connection_state != ConnectionState.IN_ROOM:
+		return
+	send(Protocol.msg(Protocol.MSG_PLAY_CARD, {"card": Protocol.card_to_dict(card)}))
+
+func declare_trump(suit: Card.Suit) -> void:
+	if connection_state != ConnectionState.IN_ROOM:
+		return
+	send(Protocol.msg(Protocol.MSG_DECLARE_TRUMP, {"suit": int(suit)}))
+
+func next_round() -> void:
+	if connection_state != ConnectionState.IN_ROOM or not is_host:
+		return
+	send(Protocol.msg(Protocol.MSG_NEXT_ROUND))
 
 # ── Incoming server messages ──────────────────────────────────────────────────
 
@@ -158,5 +178,28 @@ func _handle_server_message(msg: Dictionary) -> void:
 			error_received.emit(code, message)
 		Protocol.MSG_GAME_STARTING:
 			game_starting.emit()
+		Protocol.MSG_SESSION_START:
+			_begin_multiplayer_session(msg)
+		Protocol.MSG_ROUND_STARTING, \
+		Protocol.MSG_HAND_DEALT, \
+		Protocol.MSG_TRUMP_SELECTION_NEEDED, \
+		Protocol.MSG_TRUMP_DECLARED, \
+		Protocol.MSG_TURN_STARTED, \
+		Protocol.MSG_CARD_PLAYED, \
+		Protocol.MSG_TRICK_COMPLETED, \
+		Protocol.MSG_ROUND_ENDED, \
+		Protocol.MSG_SEAT_TAKEN_OVER_BY_AI:
+			if GameState.game_source is NetGameView:
+				(GameState.game_source as NetGameView).apply_event(msg)
 		_:
 			push_warning("NetworkState: unknown server msg type=%s" % type)
+
+func _begin_multiplayer_session(msg: Dictionary) -> void:
+	var view := NetGameView.new()
+	# Pass the server-absolute seat so NetGameView can rotate events; the UI
+	# then sees the local player at display seat 0.
+	view._server_local_seat = local_seat
+	GameState.set_multiplayer_source(view)
+	view.apply_event(msg)
+	# Defer so we don't change scenes inside the message-handling frame.
+	get_tree().change_scene_to_file.call_deferred("res://scenes/game_table.tscn")

@@ -13,15 +13,12 @@ extends Control
 @onready var start_button: Button = $Center/StartButton
 @onready var leave_button: Button = $Center/LeaveButton
 
-const _TOAST_NOT_IMPLEMENTED := "Milestone 1: game logic not implemented"
-
 func _ready() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	leave_button.pressed.connect(_leave)
 	NetworkState.room_state_changed.connect(_render)
 	NetworkState.connection_state_changed.connect(_on_connection_state_changed)
 	NetworkState.error_received.connect(_on_error_received)
-	NetworkState.game_starting.connect(_on_game_starting)
 	_render()
 
 func _notification(what: int) -> void:
@@ -48,9 +45,6 @@ func _render() -> void:
 
 func _on_start_pressed() -> void:
 	NetworkState.start_game()
-
-func _on_game_starting() -> void:
-	_show_toast(_TOAST_NOT_IMPLEMENTED)
 
 func _on_connection_state_changed(state: int) -> void:
 	if state == NetworkState.ConnectionState.DISCONNECTED:
