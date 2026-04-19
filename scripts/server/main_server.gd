@@ -5,7 +5,7 @@ extends Node
 ## Never uses SceneTree.multiplayer — we drive the peer manually so raw
 ## put_packet/get_packet works unambiguously.
 
-@onready var log_label: Label = $LogLabel
+@onready var log_label: Label = get_node_or_null("LogLabel")
 
 var _peer: ENetMultiplayerPeer = null
 var _rooms: RoomManager = null

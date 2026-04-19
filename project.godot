@@ -38,6 +38,11 @@ window/handheld/orientation=1
 
 theme/custom="res://assets/theme/main_theme.tres"
 
+[network]
+
+server_address="trump.randyland.com"
+server_port=9999
+
 [rendering]
 
 renderer/rendering_method="mobile"

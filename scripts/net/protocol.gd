@@ -65,8 +65,8 @@ const ERROR_MESSAGES := {
 }
 
 # ── Transport ─────────────────────────────────────────────────────────────────
-const SERVER_HOST := "127.0.0.1"
-const SERVER_PORT := 9999
+static var SERVER_HOST: String = ProjectSettings.get_setting("network/server_address", "127.0.0.1")
+static var SERVER_PORT: int = ProjectSettings.get_setting("network/server_port", 9999)
 const MAX_PEERS := 8
 const MAX_PLAYERS_PER_ROOM := 4
 const ROOM_CODE_LENGTH := 6

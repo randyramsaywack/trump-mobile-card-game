@@ -1,23 +1,27 @@
 extends Node
 
 ## First-run autoload. Decides whether this Godot instance becomes the
-## dedicated server or a client by racing to bind ENet port 9999:
-##   * bind succeeds → server mode, hand peer off to server_main.tscn
-##   * bind fails    → client mode, fall through to main_menu.tscn
+## dedicated server or a client.
 ##
-## Runs before the main scene is loaded (see the scene change at the bottom).
-## Zero config, no command-line flags, no editor changes — first F5 is the
-## server, every subsequent F5 is a client.
+## Priority order:
+##   1. --server flag or OS.has_feature("dedicated_server") → always server
+##   2. iOS / Android platform → always client
+##   3. Desktop fallback → race for the ENet port (first F5 = server)
 
 func _ready() -> void:
-	# Mobile builds are always clients — never race for the server port.
-	# The dedicated server only runs on desktop/headless on the Proxmox VM.
+	# Explicit dedicated server mode (headless export or --server flag)
+	if OS.has_feature("dedicated_server") or "--server" in OS.get_cmdline_args():
+		_start_server()
+		return
+
+	# Mobile builds are always clients
 	var platform := OS.get_name()
 	if platform == "iOS" or platform == "Android":
 		print("[bootstrap] Platform %s — running as CLIENT" % platform)
 		get_tree().change_scene_to_file.call_deferred("res://scenes/main_menu.tscn")
 		return
 
+	# Desktop: race for the port (dev convenience)
 	var peer := ENetMultiplayerPeer.new()
 	var err := peer.create_server(Protocol.SERVER_PORT, Protocol.MAX_PEERS)
 	if err == OK:
@@ -28,3 +32,14 @@ func _ready() -> void:
 		print("[bootstrap] Port %d taken (err=%d) — running as CLIENT" % [Protocol.SERVER_PORT, err])
 		peer.close()
 		get_tree().change_scene_to_file.call_deferred("res://scenes/main_menu.tscn")
+
+func _start_server() -> void:
+	var peer := ENetMultiplayerPeer.new()
+	var err := peer.create_server(Protocol.SERVER_PORT, Protocol.MAX_PEERS)
+	if err != OK:
+		push_error("[bootstrap] FATAL: cannot bind port %d (err=%d)" % [Protocol.SERVER_PORT, err])
+		get_tree().quit(1)
+		return
+	print("[bootstrap] Dedicated server on port %d" % Protocol.SERVER_PORT)
+	NetworkState.pending_server_peer = peer
+	get_tree().change_scene_to_file.call_deferred("res://scenes/server_main.tscn")
