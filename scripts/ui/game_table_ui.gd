@@ -787,11 +787,17 @@ func _on_card_played(seat: int, card: Card) -> void:
 	var found := false
 	if container != null:
 		for child in container.get_children():
-			if child.get("card_data") == card:
+			var cd: Card = child.get("card_data")
+			if cd != null and cd.suit == card.suit and cd.rank == card.rank:
 				start_global = (child as Control).global_position
 				child.queue_free()
 				found = true
 				break
+		if not found and seat != 0 and container.get_child_count() > 0:
+			var last := container.get_child(container.get_child_count() - 1) as Control
+			start_global = last.global_position
+			last.queue_free()
+			found = true
 	var slot := _get_trick_slot(seat)
 	if slot == null:
 		return
