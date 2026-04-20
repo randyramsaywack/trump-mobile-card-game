@@ -1,0 +1,15 @@
+## Traefik dynamic config — Trump game server (UDP)
+## Place in your Traefik file provider directory (e.g. /etc/traefik/conf.d/)
+
+udp:
+  routers:
+    trump-game:
+      entryPoints:
+        - "gameudp"
+      service: trump-game-svc
+
+  services:
+    trump-game-svc:
+      loadBalancer:
+        servers:
+          - address: "10.1.1.193:9999"

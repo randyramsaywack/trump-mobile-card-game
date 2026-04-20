@@ -40,7 +40,7 @@ theme/custom="res://assets/theme/main_theme.tres"
 
 [network]
 
-server_address="trump.randyland.com"
+server_address="129.153.37.52"
 server_port=9999
 
 [rendering]
