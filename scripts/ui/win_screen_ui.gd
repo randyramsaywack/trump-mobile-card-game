@@ -17,6 +17,10 @@ func _ready() -> void:
 	history_btn.pressed.connect(_on_history_pressed)
 	next_round_btn.pressed.connect(_on_next_round)
 	main_menu_btn.pressed.connect(_on_main_menu)
+	# Re-evaluate the Next Round button if the host changes while the win
+	# screen is visible (e.g., the original host disconnected and the server
+	# promoted someone else to host between rounds).
+	NetworkState.room_state_changed.connect(_refresh_next_round_button)
 
 func _on_history_pressed() -> void:
 	history_requested.emit()
@@ -29,13 +33,16 @@ func show_result(winning_team: int, session_wins: Array) -> void:
 		result_label.text = "Opponents Win!"
 		result_label.add_theme_color_override("font_color", COLOR_LOSS)
 	session_label.text = "Session — You: %d | Opponents: %d" % [session_wins[0], session_wins[1]]
+	_refresh_next_round_button()
+	_animate_entrance()
+
+func _refresh_next_round_button() -> void:
 	if GameState.multiplayer_mode and not NetworkState.is_host:
 		next_round_btn.disabled = true
 		next_round_btn.text = "Waiting for host…"
 	else:
 		next_round_btn.disabled = false
 		next_round_btn.text = "Next Round"
-	_animate_entrance()
 
 func _on_next_round() -> void:
 	visible = false

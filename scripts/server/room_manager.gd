@@ -87,12 +87,15 @@ func handle_leave_room(peer_id: int) -> Array:
 	var room := room_for_peer(peer_id)
 	if room == null:
 		return []
-	# Host leaving always collapses the room, even mid-game.
-	if room.host_id == peer_id:
-		return _remove_peer_from_room(peer_id, room)
-	# Non-host during an active game: swap seat to AI instead of removing.
+	# Mid-game: same shape as a disconnect — AI takes the seat, and if the
+	# host left we promote another human so the room keeps functioning.
 	if room.game_session != null:
-		return _on_non_host_exit(room, peer_id, "left")
+		var was_host := room.host_id == peer_id
+		var out := _on_non_host_exit(room, peer_id, "left")
+		if was_host:
+			out.append_array(_promote_new_host(room))
+		return out
+	# Lobby: host leaving collapses the room.
 	return _remove_peer_from_room(peer_id, room)
 
 # ── start_game ────────────────────────────────────────────────────────────────
@@ -129,10 +132,18 @@ func handle_disconnect(peer_id: int) -> Array:
 	var room := room_for_peer(peer_id)
 	if room == null:
 		return []
-	if room.host_id == peer_id:
-		return _remove_peer_from_room(peer_id, room)
+	# Mid-game: AI takes over the seat regardless of host status, and if the
+	# host disconnected we auto-promote another connected human so future
+	# host-only actions (Next Round) still resolve. Without this, host
+	# disconnects froze every other client on the game screen.
 	if room.game_session != null:
-		return _on_non_host_exit(room, peer_id, "disconnect")
+		var was_host := room.host_id == peer_id
+		var out := _on_non_host_exit(room, peer_id, "disconnect")
+		if was_host:
+			out.append_array(_promote_new_host(room))
+		return out
+	# Lobby (no active game): keep prior behavior — host disconnect collapses
+	# the room since there's nothing to keep alive.
 	return _remove_peer_from_room(peer_id, room)
 
 # ── Game-loop delegators ──────────────────────────────────────────────────────
@@ -206,6 +217,32 @@ func _on_non_host_exit(room: Room, peer_id: int, reason: String) -> Array:
 			break
 	if not room.game_session.has_humans():
 		_rooms.erase(room.code)
+	return out
+
+## Picks the next still-connected human in `room` and transfers the host role.
+## Called only after _on_non_host_exit has zeroed out the disconnected host's
+## peer_id entry, so any non-zero peer in room.players is a candidate.
+## Broadcasts the updated room state directly to each connected human (skipping
+## the zeroed entry — _send treats peer 0 as a broadcast and would dupe).
+func _promote_new_host(room: Room) -> Array:
+	var new_host_id := 0
+	for entry in room.players:
+		var pid := int(entry["peer_id"])
+		if pid != 0:
+			new_host_id = pid
+			break
+	if new_host_id == 0:
+		_rooms.erase(room.code)
+		return []
+	room.host_id = new_host_id
+	for e in room.players:
+		e["is_host"] = (int(e["peer_id"]) == new_host_id)
+	var msg := Protocol.msg(Protocol.MSG_ROOM_STATE, room.to_state_dict())
+	var out: Array = []
+	for entry in room.players:
+		var pid := int(entry["peer_id"])
+		if pid != 0:
+			out.append([pid, msg])
 	return out
 
 func _broadcast_room_state(room: Room, exclude_peer_id: int = -1) -> Array:
