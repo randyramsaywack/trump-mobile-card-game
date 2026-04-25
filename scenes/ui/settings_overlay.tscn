@@ -108,56 +108,6 @@ horizontal_alignment = 2
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 theme_override_font_sizes/font_size = 13
 
-[node name="SpeedLabel" type="Label" parent="Panel/VBox"]
-layout_mode = 2
-text = "Animation Speed"
-theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
-theme_override_font_sizes/font_size = 13
-
-[node name="SpeedRow" type="HBoxContainer" parent="Panel/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-alignment = 1
-
-[node name="SlowBtn" type="Button" parent="Panel/VBox/SpeedRow"]
-layout_mode = 2
-custom_minimum_size = Vector2(80, 36)
-toggle_mode = true
-text = "Slow"
-theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
-theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
-theme_override_colors/font_pressed_color = Color(1, 0.95, 0.7, 1)
-theme_override_styles/normal = SubResource("SB_btn_normal")
-theme_override_styles/hover = SubResource("SB_btn_hover")
-theme_override_styles/pressed = SubResource("SB_btn_hover")
-theme_override_styles/focus = SubResource("SB_btn_hover")
-
-[node name="NormalBtn" type="Button" parent="Panel/VBox/SpeedRow"]
-layout_mode = 2
-custom_minimum_size = Vector2(80, 36)
-toggle_mode = true
-text = "Normal"
-theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
-theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
-theme_override_colors/font_pressed_color = Color(1, 0.95, 0.7, 1)
-theme_override_styles/normal = SubResource("SB_btn_normal")
-theme_override_styles/hover = SubResource("SB_btn_hover")
-theme_override_styles/pressed = SubResource("SB_btn_hover")
-theme_override_styles/focus = SubResource("SB_btn_hover")
-
-[node name="FastBtn" type="Button" parent="Panel/VBox/SpeedRow"]
-layout_mode = 2
-custom_minimum_size = Vector2(80, 36)
-toggle_mode = true
-text = "Fast"
-theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
-theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
-theme_override_colors/font_pressed_color = Color(1, 0.95, 0.7, 1)
-theme_override_styles/normal = SubResource("SB_btn_normal")
-theme_override_styles/hover = SubResource("SB_btn_hover")
-theme_override_styles/pressed = SubResource("SB_btn_hover")
-theme_override_styles/focus = SubResource("SB_btn_hover")
-
 [node name="DifficultyLabel" type="Label" parent="Panel/VBox"]
 layout_mode = 2
 text = "AI Difficulty"

@@ -75,6 +75,13 @@ var _awaiting_final_deal: bool = false
 # States deferred until the deal animation finishes
 var _pending_trump_selection: Dictionary = {}
 var _pending_turn: Dictionary = {}
+## In MP the server runs much faster than the client's dealing animation, so
+## opponent card-plays / trick completions can arrive while we're still
+## visually dealing cards out. Buffer them here and replay in order once
+## _initial_deal_done flips, otherwise the trick area starts filling before
+## the player's hand finishes appearing.
+var _pending_card_plays: Array = []         # [{seat, card}, ...]
+var _pending_trick_completes: Array = []    # [{winner_seat, books, seat_books}, ...]
 var _new_trick_pending: bool = true
 
 # Active trick: maps seat index -> Control node for each played card (floating,
@@ -478,6 +485,16 @@ func _process_deal_queue() -> void:
 	_animate_deal_one(item.seat, item.card, item.face_up)
 
 func _flush_pending() -> void:
+	# Replay buffered card plays first so the trick area catches up to the
+	# server's truth before the next turn / win screen is shown. trick
+	# completions follow so the collection animation runs against visible
+	# cards rather than empty slots.
+	while not _pending_card_plays.is_empty():
+		var p: Dictionary = _pending_card_plays.pop_front()
+		_on_card_played(int(p.seat), p.card as Card)
+	while not _pending_trick_completes.is_empty():
+		var t: Dictionary = _pending_trick_completes.pop_front()
+		_on_trick_completed(int(t.winner_seat), t.books as Array, t.seat_books as Array)
 	if not _pending_trump_selection.is_empty():
 		var s := _pending_trump_selection.duplicate()
 		_pending_trump_selection.clear()
@@ -805,6 +822,12 @@ func _reset_hand_state() -> void:
 # ── Card played & trick ───────────────────────────────────────────────────────
 
 func _on_card_played(seat: int, card: Card) -> void:
+	# Defer until dealing has visually completed — the server blasts events
+	# faster than the deal animation and we don't want trick cards landing
+	# mid-deal. _flush_pending will replay these in order.
+	if not _initial_deal_done:
+		_pending_card_plays.append({seat = seat, card = card})
+		return
 	var played_avatar = _get_avatar(seat)
 	if played_avatar:
 		played_avatar.set_active(false)
@@ -855,6 +878,16 @@ func _on_card_played(seat: int, card: Card) -> void:
 	await tween.finished
 
 func _on_trick_completed(winner_seat: int, books: Array, seat_books: Array) -> void:
+	# Same deferral as _on_card_played — a trick can complete server-side
+	# while we're still dealing visually. Buffer until dealing is done so the
+	# trick-collection animation runs after the cards are actually visible.
+	if not _initial_deal_done:
+		_pending_trick_completes.append({
+			winner_seat = winner_seat,
+			books = books,
+			seat_books = seat_books,
+		})
+		return
 	_new_trick_pending = true
 	# Team 0 = human + partner (seats 0, 2). Vibrate only on player-team wins.
 	if winner_seat == 0 or winner_seat == 2:
@@ -946,6 +979,8 @@ func _on_round_started(_dealer_seat: int, _trump_selector_seat: int) -> void:
 	_shuffle_done = false
 	_pending_trump_selection.clear()
 	_pending_turn.clear()
+	_pending_card_plays.clear()
+	_pending_trick_completes.clear()
 	_selected_card = null
 	_current_valid_cards.clear()
 	_new_trick_pending = true

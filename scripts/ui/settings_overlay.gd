@@ -4,9 +4,6 @@ signal closed()
 
 @onready var volume_slider: HSlider = $Panel/VBox/VolumeRow/VolumeSlider
 @onready var volume_value: Label = $Panel/VBox/VolumeRow/VolumeValue
-@onready var slow_btn: Button = $Panel/VBox/SpeedRow/SlowBtn
-@onready var normal_btn: Button = $Panel/VBox/SpeedRow/NormalBtn
-@onready var fast_btn: Button = $Panel/VBox/SpeedRow/FastBtn
 @onready var easy_btn: Button = $Panel/VBox/DifficultyRow/EasyBtn
 @onready var medium_btn: Button = $Panel/VBox/DifficultyRow/MediumBtn
 @onready var hard_btn: Button = $Panel/VBox/DifficultyRow/HardBtn
@@ -25,16 +22,12 @@ const DIFFICULTY_DESC := {
 func _ready() -> void:
 	volume_slider.value = Settings.volume
 	_update_value_label()
-	_refresh_speed_buttons()
 	_refresh_difficulty_buttons()
 	_refresh_vibration_toggle()
 	vibration_toggle.toggled.connect(_on_vibration_toggled)
 	auto_sort_toggle.toggled.connect(_on_auto_sort_toggled)
 	_refresh_auto_sort_toggle()
 	volume_slider.value_changed.connect(_on_volume_changed)
-	slow_btn.pressed.connect(func(): _set_speed(Settings.AnimSpeed.SLOW))
-	normal_btn.pressed.connect(func(): _set_speed(Settings.AnimSpeed.NORMAL))
-	fast_btn.pressed.connect(func(): _set_speed(Settings.AnimSpeed.FAST))
 	easy_btn.pressed.connect(func(): _set_difficulty(AIPlayer.Difficulty.EASY))
 	medium_btn.pressed.connect(func(): _set_difficulty(AIPlayer.Difficulty.MEDIUM))
 	hard_btn.pressed.connect(func(): _set_difficulty(AIPlayer.Difficulty.HARD))
@@ -47,15 +40,6 @@ func _on_volume_changed(value: float) -> void:
 
 func _update_value_label() -> void:
 	volume_value.text = "%d%%" % int(volume_slider.value)
-
-func _set_speed(speed: int) -> void:
-	Settings.set_anim_speed(speed)
-	_refresh_speed_buttons()
-
-func _refresh_speed_buttons() -> void:
-	slow_btn.button_pressed = Settings.anim_speed == Settings.AnimSpeed.SLOW
-	normal_btn.button_pressed = Settings.anim_speed == Settings.AnimSpeed.NORMAL
-	fast_btn.button_pressed = Settings.anim_speed == Settings.AnimSpeed.FAST
 
 func _set_difficulty(value: int) -> void:
 	GameState.ai_difficulty = value

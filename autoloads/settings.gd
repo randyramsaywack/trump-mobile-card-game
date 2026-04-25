@@ -5,19 +5,9 @@ extends Node
 const CONFIG_PATH := "user://settings.cfg"
 const MASTER_BUS := 0
 
-enum AnimSpeed { SLOW, NORMAL, FAST }
-
-const ANIM_MULTIPLIER := {
-	AnimSpeed.SLOW: 1.5,
-	AnimSpeed.NORMAL: 1.0,
-	AnimSpeed.FAST: 0.5,
-}
-
-const ANIM_LABEL := {
-	AnimSpeed.SLOW: "Slow",
-	AnimSpeed.NORMAL: "Normal",
-	AnimSpeed.FAST: "Fast",
-}
+## Animation speed is fixed at the previous "Fast" multiplier — the user-facing
+## slow/normal/fast toggle was removed from the settings overlay.
+const ANIM_MULTIPLIER: float = 0.5
 
 signal changed()
 
@@ -25,7 +15,6 @@ const PLAYER_NAME_MAX_LEN := 12
 const MP_USERNAME_DEFAULT := "Guest"
 
 var volume: float = 100.0  # 0-100
-var anim_speed: int = AnimSpeed.NORMAL
 var vibration_enabled: bool = true
 var mp_username: String = MP_USERNAME_DEFAULT
 var auto_sort: bool = true
@@ -35,18 +24,11 @@ func _ready() -> void:
 	_apply_volume()
 
 func anim_multiplier() -> float:
-	return ANIM_MULTIPLIER[anim_speed]
+	return ANIM_MULTIPLIER
 
 func set_volume(value: float) -> void:
 	volume = clampf(value, 0.0, 100.0)
 	_apply_volume()
-	_save()
-	changed.emit()
-
-func set_anim_speed(value: int) -> void:
-	if not ANIM_MULTIPLIER.has(value):
-		return
-	anim_speed = value
 	_save()
 	changed.emit()
 
@@ -83,9 +65,6 @@ func _load() -> void:
 	if err != OK:
 		return
 	volume = clampf(float(cfg.get_value("audio", "volume", 100.0)), 0.0, 100.0)
-	var s := int(cfg.get_value("video", "anim_speed", AnimSpeed.NORMAL))
-	if ANIM_MULTIPLIER.has(s):
-		anim_speed = s
 	vibration_enabled = bool(cfg.get_value("haptics", "vibration_enabled", true))
 	var mp_val := String(cfg.get_value("player", "mp_username", MP_USERNAME_DEFAULT)).strip_edges()
 	if mp_val == "":
@@ -96,7 +75,6 @@ func _load() -> void:
 func _save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("audio", "volume", volume)
-	cfg.set_value("video", "anim_speed", anim_speed)
 	cfg.set_value("haptics", "vibration_enabled", vibration_enabled)
 	cfg.set_value("player", "mp_username", mp_username)
 	cfg.set_value("gameplay", "auto_sort", auto_sort)
