@@ -174,10 +174,17 @@ func _apply_session_start(data: Dictionary) -> void:
 		var display_seat := _to_display_seat(server_seat)
 		var is_ai := bool(entry["is_ai"])
 		seat_is_ai[display_seat] = is_ai
-		# Display names are position-based ("You"/"Left"/"Partner"/"Right") so
-		# they match single-player. The server still sends real usernames but
-		# we intentionally drop them for consistency with SP's display model.
-		var label: String = DISPLAY_SEAT_NAMES[display_seat]
+		# Local seat is always "You". AI-filled seats use the position label
+		# (the server's AI naming is from its own coordinate space, which
+		# wouldn't match this client's perspective). Real human opponents
+		# show their actual username from the server payload.
+		var label: String
+		if display_seat == 0:
+			label = "You"
+		elif is_ai:
+			label = DISPLAY_SEAT_NAMES[display_seat]
+		else:
+			label = String(entry.get("username", DISPLAY_SEAT_NAMES[display_seat]))
 		seat_usernames[display_seat] = label
 		# All seats get a placeholder Player so round_manager-style code paths
 		# (hand.size() etc.) work. Only display seat 0 — the local player —
