@@ -13,7 +13,7 @@ Supports single player vs AI and online multiplayer (up to 4 real players).
 - **Target Platforms:** iOS and Android (crossplay supported)
 - **Assets:** Placeholder assets only (to be replaced later)
 - **Networking:** Godot built-in networking (ENet/WebSocket via MultiplayerAPI)
-- **Server:** Dedicated server hosted on Proxmox homelab (Ubuntu VM)
+- **Server:** Dedicated server hosted on Oracle Cloud Free Tier (Always Free VM)
 - **Domain:** Public domain to be configured later — architecture must support it
 
 ---
@@ -125,8 +125,8 @@ Supports single player vs AI and online multiplayer (up to 4 real players).
 
 ### Stack
 - Godot MultiplayerAPI (ENet for UDP, WebSocket fallback for mobile)
-- Dedicated server on Ubuntu VM (Proxmox homelab)
-- Godot headless server export running as a service on the Ubuntu VM
+- Dedicated server on Oracle Cloud Free Tier (Always Free VM)
+- Godot headless server export running as a systemd service on the VM
 - Public domain to be configured — code must use a configurable server address
   (not hardcoded IP)
 
@@ -382,7 +382,7 @@ IDLE
 - Touch input — no mouse/keyboard assumptions
 - Crossplay: iOS and Android in the same multiplayer game
 - Test on small (iPhone SE) and large (iPad / large Android) screens
-- Server: Ubuntu VM on Proxmox, Godot headless server binary
+- Server: Oracle Cloud Free Tier VM, Godot headless server binary
 - Server address must be configurable (not hardcoded) for domain setup later
 
 ---

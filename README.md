@@ -14,7 +14,7 @@ The canonical game rules, state machine, and product requirements live in [`CLAU
 | Language | GDScript (typed) |
 | Networking | Godot `MultiplayerAPI` over `ENetMultiplayerPeer` (UDP) |
 | Server | Godot **headless** (`dedicated_server` feature) export, running as a Linux binary |
-| Server hosting | Ubuntu VM on Proxmox homelab, fronted by Traefik (`server/traefik/trump-game.yml`) |
+| Server hosting | Oracle Cloud Free Tier (Always Free VM) |
 | iOS build | Xcode project under `Trump.xcodeproj/`, built from a Godot iOS export |
 | Android build | Standard Godot Android export → APK |
 | Persistence | `user://settings.cfg` (per-device settings); session stats in-memory only |
@@ -76,9 +76,6 @@ The wire protocol is intentionally minimal: every packet is a `Dictionary` of th
 │   ├── game_table.tscn        # The play screen
 │   ├── card.tscn
 │   └── ui/                    # Overlay/menu scenes (room_waiting, win_screen, etc.)
-│
-├── server/
-│   └── traefik/trump-game.yml # Traefik dynamic config for the public domain
 │
 ├── assets/                    # cards/, ui/, sounds/, fonts/, theme/
 ├── marketing/                 # App Store screenshots & copy
@@ -159,7 +156,7 @@ Trump.sh        # thin wrapper that execs Trump.x86_64 with passthrough args
 Trump.pck       # game data
 ```
 
-Both the binary and wrapper are gitignored — they are deploy artifacts. Ship them to the Ubuntu VM (e.g. `scp` to `/opt/trump/`) and run as a systemd service. Traefik routing for the public domain is configured in `server/traefik/trump-game.yml`.
+Both the binary and wrapper are gitignored — they are deploy artifacts. Ship them to the Oracle Cloud Free Tier VM (e.g. `scp` to `/opt/trump/`) and run as a systemd service. Make sure the VM's ingress security list / firewall allows UDP traffic on `Protocol.SERVER_PORT` (default `9999`).
 
 ### Building for iOS
 
