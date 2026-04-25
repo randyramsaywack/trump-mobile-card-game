@@ -55,6 +55,12 @@ var session_wins: Array[int] = [0, 0]
 var seat_usernames: Array[String] = ["", "", "", ""]
 var seat_is_ai: Array[bool] = [false, false, false, false]
 
+## Local-clock deadline for the active turn (Time.get_ticks_msec() value).
+## Set when the server delivers MSG_TURN_STARTED / MSG_TRUMP_SELECTION_NEEDED
+## with seconds_remaining; cleared when the turn ends or the round wraps. UI
+## reads this every frame and shows a countdown; 0 means "no active turn".
+var current_turn_deadline_msec: int = 0
+
 ## Position labels used at every display seat in every mode. Display seat 0
 ## is always the local player (NetGameView rotates incoming events, SP puts
 ## the human at seat 0 directly), so this mapping is shared between SP and MP.
@@ -227,6 +233,7 @@ func _apply_hand_dealt(data: Dictionary) -> void:
 func _apply_trump_selection_needed(data: Dictionary) -> void:
 	state = RoundState.TRUMP_SELECTION
 	trump_selector_seat = _to_display_seat(int(data["seat_index"]))
+	_arm_local_deadline(float(data.get("seconds_remaining", 0)))
 	var initial_cards: Array = []
 	if trump_selector_seat == 0:
 		initial_cards = players[0].hand.cards.duplicate()
@@ -235,6 +242,7 @@ func _apply_trump_selection_needed(data: Dictionary) -> void:
 func _apply_trump_declared(data: Dictionary) -> void:
 	trump_suit = int(data["suit"]) as Card.Suit
 	state = RoundState.DEALING_REMAINING
+	current_turn_deadline_msec = 0
 	trump_declared.emit(trump_suit)
 
 func _apply_turn_started(data: Dictionary) -> void:
@@ -242,12 +250,22 @@ func _apply_turn_started(data: Dictionary) -> void:
 	if current_trick == null:
 		current_trick = Trick.new(trump_suit)
 	state = RoundState.PLAYER_TURN
+	_arm_local_deadline(float(data.get("seconds_remaining", 0)))
 	var valid: Array[Card] = []
 	if current_player_seat == 0:
 		valid = players[0].hand.get_valid_cards(
 			current_trick.led_suit, trump_suit
 		)
 	turn_started.emit(current_player_seat, valid)
+
+## Server sends seconds_remaining; client converts to a local deadline so we
+## don't have to do clock-sync. Drift between client/server clocks is bounded
+## by the network round-trip (sub-second), well within the 60s budget.
+func _arm_local_deadline(seconds: float) -> void:
+	if seconds <= 0:
+		current_turn_deadline_msec = 0
+		return
+	current_turn_deadline_msec = Time.get_ticks_msec() + int(seconds * 1000.0)
 
 func _apply_card_played(data: Dictionary) -> void:
 	var display_seat := _to_display_seat(int(data["seat_index"]))
@@ -261,6 +279,8 @@ func _apply_card_played(data: Dictionary) -> void:
 				players[0].hand.remove_card(c)
 				break
 	current_trick.play_card(display_seat, card)
+	# Active turn just ended; next MSG_TURN_STARTED will re-arm.
+	current_turn_deadline_msec = 0
 	card_played_signal.emit(display_seat, card)
 
 func _apply_trick_completed(data: Dictionary) -> void:
@@ -269,6 +289,7 @@ func _apply_trick_completed(data: Dictionary) -> void:
 	books_by_seat = _rotate_seat_int_array(data.get("books_by_seat", [0, 0, 0, 0]) as Array)
 	current_trick = null
 	state = RoundState.TRICK_DISPLAY
+	current_turn_deadline_msec = 0
 	trick_completed.emit(winner_seat, books, books_by_seat)
 
 func _apply_round_ended(data: Dictionary) -> void:
@@ -277,6 +298,7 @@ func _apply_round_ended(data: Dictionary) -> void:
 		session_wins = _swap_team_array(data["session_wins"] as Array)
 	trick_history = _deserialize_trick_history(data.get("trick_history", []) as Array)
 	state = RoundState.ROUND_OVER
+	current_turn_deadline_msec = 0
 	round_ended.emit(winning_team)
 
 func _apply_seat_taken_over(data: Dictionary) -> void:

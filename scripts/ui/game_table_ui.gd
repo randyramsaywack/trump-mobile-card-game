@@ -121,6 +121,34 @@ func _exit_tree() -> void:
 	# Release the wake lock when leaving the game scene.
 	DisplayServer.screen_set_keep_on(false)
 
+## Drives the multiplayer turn-timer countdown. SP has no timer (no need to
+## pressure a solo human). NetGameView publishes a local-clock deadline; we
+## just compute remaining and update the label every frame.
+func _process(_delta: float) -> void:
+	if not GameState.multiplayer_mode:
+		if timer_label.visible:
+			timer_label.visible = false
+		return
+	var view := GameState.game_source as NetGameView
+	if view == null or view.current_turn_deadline_msec <= 0:
+		if timer_label.visible:
+			timer_label.visible = false
+		return
+	var remaining_ms := view.current_turn_deadline_msec - Time.get_ticks_msec()
+	if remaining_ms <= 0:
+		# Server's tick will deliver the AI play within a frame or two; keep
+		# the label at 0s in the meantime so it doesn't pop back to 60.
+		timer_label.text = "0s"
+		timer_label.visible = true
+		return
+	var seconds_left := int(ceil(float(remaining_ms) / 1000.0))
+	timer_label.text = "%ds" % seconds_left
+	timer_label.visible = true
+	if seconds_left <= 10:
+		timer_label.add_theme_color_override("font_color", Color(0.85, 0.224, 0.169, 1))
+	else:
+		timer_label.remove_theme_color_override("font_color")
+
 func _refresh_south_name() -> void:
 	south_avatar.set_player_name("You")
 

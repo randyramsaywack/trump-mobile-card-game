@@ -31,6 +31,13 @@ var between_rounds: bool = false
 ## handlers append here; public methods return a drained copy to the caller.
 var _pending_events: Array = []
 
+## Per-turn timer (multiplayer only). Server-monotonic seconds remaining for
+## the current active turn or trump-selection. <= 0 means no active deadline.
+## On expiry tick() runs AI on behalf of the human seat, then resets to 0
+## (next turn_started/trump_selection_needed sets it again).
+const TURN_TIMEOUT_SECONDS: float = 60.0
+var _turn_deadline_sec: float = 0.0
+
 func _init(room_code: String) -> void:
 	code = room_code
 	round_manager = RoundManager.new()
@@ -124,8 +131,49 @@ func handle_play_card(peer_id: int, data: Dictionary) -> Array:
 
 ## Called every frame by RoomManager.tick → main_server._process.
 func tick(delta: float) -> Array:
+	# Turn timer: if a deadline is set and it just elapsed, run AI on behalf
+	# of the human seat. Reset the deadline so we only fire once — the next
+	# turn_started signal will re-arm it. AI seats are skipped (RoundManager
+	# already drives them via its own _ai_pending timer).
+	if _turn_deadline_sec > 0.0 and _now_sec() >= _turn_deadline_sec:
+		_turn_deadline_sec = 0.0
+		var seat := _active_seat()
+		if seat >= 0 and not (players[seat] is AIPlayer):
+			_execute_ai_for_seat(seat)
 	round_manager.tick(delta)
 	return drain_events()
+
+func _now_sec() -> float:
+	return float(Time.get_ticks_msec()) / 1000.0
+
+func _active_seat() -> int:
+	if round_manager.state == RoundManager.RoundState.TRUMP_SELECTION:
+		return round_manager.trump_selector_seat
+	if round_manager.state == RoundManager.RoundState.PLAYER_TURN:
+		return round_manager.current_player_seat
+	return -1
+
+## Plays a card (or selects trump) on behalf of a human seat using the same
+## AIPlayer logic that drives normal AI seats. Hand is shared by reference so
+## the temporary AIPlayer modifies the real Player's hand via play_card.
+func _execute_ai_for_seat(seat: int) -> void:
+	var p := players[seat]
+	if p == null or p is AIPlayer:
+		return
+	var temp_ai := AIPlayer.new(seat, p.display_name)
+	temp_ai.hand = p.hand
+	if round_manager.state == RoundManager.RoundState.TRUMP_SELECTION:
+		round_manager.declare_trump(temp_ai.choose_trump())
+	elif round_manager.state == RoundManager.RoundState.PLAYER_TURN:
+		var trick := round_manager.current_trick
+		if trick == null:
+			return
+		var valid: Array = p.hand.get_valid_cards(trick.led_suit, round_manager.trump_suit)
+		if valid.is_empty():
+			return
+		var partner_seat := (seat + 2) % 4
+		var card := temp_ai.choose_card(valid, trick, partner_seat)
+		round_manager.play_card(seat, card)
 
 ## Called when a non-host peer drops connection. Swaps the peer's seat to
 ## AI and broadcasts the takeover to remaining humans. Caller is responsible
@@ -211,15 +259,35 @@ func _on_hand_dealt(seat_index: int, cards: Array) -> void:
 			_pending_events.append([peer, public_msg])
 
 func _on_trump_selection_needed(seat_index: int, _initial_cards: Array) -> void:
+	var seconds := _arm_turn_timer(seat_index)
 	_append_to_all(Protocol.msg(Protocol.MSG_TRUMP_SELECTION_NEEDED, {
 		"seat_index": seat_index,
+		"seconds_remaining": seconds,
 	}))
 
 func _on_trump_declared(suit: int) -> void:
 	_append_to_all(Protocol.msg(Protocol.MSG_TRUMP_DECLARED, {"suit": int(suit)}))
 
 func _on_turn_started(seat_index: int, _valid_cards: Array) -> void:
-	_append_to_all(Protocol.msg(Protocol.MSG_TURN_STARTED, {"seat_index": seat_index}))
+	var seconds := _arm_turn_timer(seat_index)
+	_append_to_all(Protocol.msg(Protocol.MSG_TURN_STARTED, {
+		"seat_index": seat_index,
+		"seconds_remaining": seconds,
+	}))
+
+## AI seats don't need the takeover timer (RoundManager already drives them
+## via its own _ai_pending under 1.5s) so we send seconds_remaining=0 for
+## them — clients use that as the "no countdown for this turn" signal.
+## Returns the seconds-remaining value to broadcast.
+func _arm_turn_timer(seat_index: int) -> float:
+	if seat_index < 0 or seat_index >= players.size():
+		_turn_deadline_sec = 0.0
+		return 0.0
+	if players[seat_index] is AIPlayer:
+		_turn_deadline_sec = 0.0
+		return 0.0
+	_turn_deadline_sec = _now_sec() + TURN_TIMEOUT_SECONDS
+	return TURN_TIMEOUT_SECONDS
 
 func _on_card_played(seat_index: int, card: Card) -> void:
 	_append_to_all(Protocol.msg(Protocol.MSG_CARD_PLAYED, {
@@ -238,6 +306,9 @@ func _on_round_ended(winning_team: int) -> void:
 	session_wins[winning_team] += 1
 	_rotate_dealer(1 - winning_team)
 	between_rounds = true
+	# No active turn between rounds — disarm so tick() can't trigger a
+	# spurious AI play during the win-screen window.
+	_turn_deadline_sec = 0.0
 	var trick_history_serialized := _serialize_trick_history()
 	_append_to_all(Protocol.msg(Protocol.MSG_ROUND_ENDED, {
 		"winning_team": winning_team,
