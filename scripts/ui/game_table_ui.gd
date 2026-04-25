@@ -15,7 +15,7 @@ extends Control
 @onready var books_label: Label = $HUD/HUDRow1/BooksLabel
 @onready var session_label: Label = $HUD/HUDRow2/SessionLabel
 @onready var turn_label: Label = $HUD/HUDRow2/TurnLabel
-@onready var timer_label: Label = $HUD/HUDRow2/TimerLabel
+@onready var timer_label: Label = $HUD/HUDRow3/TimerLabel
 @onready var settings_button: Button = $HUD/HUDRow1/SettingsButton
 @onready var history_button: Button = $HUD/HUDRow1/HistoryButton
 @onready var trump_watermark: Label = $TrumpWatermark
@@ -939,7 +939,7 @@ func _finalize_trick_collection(cards: Array, books: Array, seat_books: Array = 
 
 func _on_round_ended(winning_team: int) -> void:
 	AudioManager.play("round_win" if winning_team == 0 else "round_loss")
-	var wins := GameState.session_wins
+	var wins := GameState.get_session_wins()
 	session_label.text = "Session: %d–%d" % [wins[0], wins[1]]
 	if _win_screen_overlay != null:
 		_win_screen_overlay.call("show_result", winning_team, wins)

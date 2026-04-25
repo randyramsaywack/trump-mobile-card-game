@@ -92,6 +92,16 @@ func _rotate_dealer(losing_team: int) -> void:
 func start_next_round() -> void:
 	_start_round()
 
+## In MP the authoritative session-win counter lives on NetGameView (server is
+## the source of truth and it's mirrored there via _apply_round_ended). The
+## local `session_wins` field is only ever updated by RoundManager.round_ended
+## in single-player mode, so reading it directly in MP gives [0,0] forever and
+## the HUD/win-screen show stale numbers. UI should call this getter.
+func get_session_wins() -> Array:
+	if multiplayer_mode and game_source is NetGameView:
+		return (game_source as NetGameView).session_wins
+	return session_wins
+
 ## Convenience accessors for UI scripts. In multiplayer, players live on the
 ## NetGameView (indexed by display seat, so seat 0 is always the local player).
 func get_player(seat: int) -> Player:

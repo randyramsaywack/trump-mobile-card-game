@@ -40,6 +40,13 @@ custom_minimum_size = Vector2(0, 44)
 max_length = 12
 placeholder_text = "Guest"
 
+[node name="RejoinButton" type="Button" parent="Center"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "Rejoin Last Room"
+theme_override_font_sizes/font_size = 14
+
 [node name="CreateButton" type="Button" parent="Center"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 54)

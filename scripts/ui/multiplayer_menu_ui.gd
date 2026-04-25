@@ -4,6 +4,7 @@ extends Control
 ## or Join a room. Delegates all networking to NetworkState.
 
 @onready var username_edit: LineEdit = $Center/UsernameEdit
+@onready var rejoin_button: Button = $Center/RejoinButton
 @onready var create_button: Button = $Center/CreateButton
 @onready var join_button: Button = $Center/JoinButton
 @onready var join_code_edit: LineEdit = $Center/JoinCodeEdit
@@ -24,7 +25,9 @@ func _ready() -> void:
 	create_button.pressed.connect(_on_create_pressed)
 	join_button.pressed.connect(_on_join_pressed)
 	join_confirm_button.pressed.connect(_on_join_confirm_pressed)
+	rejoin_button.pressed.connect(_on_rejoin_pressed)
 	back_button.pressed.connect(_go_back)
+	_refresh_rejoin_button()
 	NetworkState.connection_state_changed.connect(_on_connection_state_changed)
 	NetworkState.room_state_changed.connect(_on_room_state_changed)
 	NetworkState.error_received.connect(_on_error_received)
@@ -49,6 +52,7 @@ func _refresh_buttons() -> void:
 	create_button.disabled = not valid
 	join_button.disabled = not valid
 	join_confirm_button.disabled = not valid or join_code_edit.text.strip_edges().length() != Protocol.ROOM_CODE_LENGTH
+	rejoin_button.disabled = not valid
 
 func _refresh_status() -> void:
 	match NetworkState.connection_state:
@@ -84,6 +88,29 @@ func _on_join_confirm_pressed() -> void:
 	_persist_username()
 	_pending_action = "join"
 	_start_connection_then(func(): NetworkState.join_room(code))
+
+## Pre-fills the join field with the saved code and submits — same path as a
+## manual join, so server-side rules (room exists / not full / not started)
+## apply unchanged. Mid-game rejoin needs server-side seat reclaim and is not
+## supported yet; until then this works for rooms still in WAITING.
+func _on_rejoin_pressed() -> void:
+	var code := Settings.last_room_code
+	if code.length() != Protocol.ROOM_CODE_LENGTH:
+		return
+	join_code_edit.text = code
+	join_code_edit.visible = true
+	join_confirm_button.visible = true
+	_persist_username()
+	_pending_action = "join"
+	_start_connection_then(func(): NetworkState.join_room(code))
+
+func _refresh_rejoin_button() -> void:
+	var code := Settings.last_room_code
+	if code.length() == Protocol.ROOM_CODE_LENGTH:
+		rejoin_button.text = "Rejoin Last Room (%s)" % code
+		rejoin_button.visible = true
+	else:
+		rejoin_button.visible = false
 
 ## Connects if needed, then runs `action` once the handshake has completed.
 ## `action` is fired from the connection_state_changed handler below.

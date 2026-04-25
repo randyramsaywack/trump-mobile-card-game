@@ -151,6 +151,8 @@ func _handle_server_message(msg: Dictionary) -> void:
 			local_peer_id = int(data.get("peer_id", 0))
 		Protocol.MSG_ROOM_JOINED:
 			room_code = String(data.get("code", ""))
+			# Persist for the "Rejoin Last Room" shortcut on the MP menu.
+			Settings.set_last_room_code(room_code)
 			players = (data.get("players", []) as Array).duplicate(true)
 			local_seat = int(data.get("your_seat", -1))
 			var host_id := int(data.get("host_id", 0))

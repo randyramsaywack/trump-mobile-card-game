@@ -18,6 +18,10 @@ var volume: float = 100.0  # 0-100
 var vibration_enabled: bool = true
 var mp_username: String = MP_USERNAME_DEFAULT
 var auto_sort: bool = true
+## The most recently joined/created room code. Drives the "Rejoin Last Room"
+## shortcut on the multiplayer menu so the user doesn't have to retype after
+## a crash, app kill, or quick relaunch. Cleared by setting to "".
+var last_room_code: String = ""
 
 func _ready() -> void:
 	_load()
@@ -41,6 +45,14 @@ func set_auto_sort(value: bool) -> void:
 	if value == auto_sort:
 		return
 	auto_sort = value
+	_save()
+	changed.emit()
+
+func set_last_room_code(value: String) -> void:
+	var trimmed := value.strip_edges().to_upper()
+	if trimmed == last_room_code:
+		return
+	last_room_code = trimmed
 	_save()
 	changed.emit()
 
@@ -71,6 +83,7 @@ func _load() -> void:
 		mp_val = MP_USERNAME_DEFAULT
 	mp_username = mp_val.substr(0, PLAYER_NAME_MAX_LEN)
 	auto_sort = bool(cfg.get_value("gameplay", "auto_sort", true))
+	last_room_code = String(cfg.get_value("multiplayer", "last_room_code", "")).strip_edges().to_upper()
 
 func _save() -> void:
 	var cfg := ConfigFile.new()
@@ -78,4 +91,5 @@ func _save() -> void:
 	cfg.set_value("haptics", "vibration_enabled", vibration_enabled)
 	cfg.set_value("player", "mp_username", mp_username)
 	cfg.set_value("gameplay", "auto_sort", auto_sort)
+	cfg.set_value("multiplayer", "last_room_code", last_room_code)
 	cfg.save(CONFIG_PATH)
