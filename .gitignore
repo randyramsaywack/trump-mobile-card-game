@@ -9,6 +9,9 @@
 *.apk
 *.apk.idsig
 *.pck
+# Exception: Trump.pck is the iOS game data bundle and is required by
+# Xcode Cloud at build time. Re-export from Godot before each TestFlight push.
+!Trump.pck
 *.zip
 
 # Linux/headless server export
