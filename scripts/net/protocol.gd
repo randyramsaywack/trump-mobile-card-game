@@ -70,7 +70,7 @@ static var SERVER_PORT: int = ProjectSettings.get_setting("network/server_port",
 const MAX_PEERS := 8
 const MAX_PLAYERS_PER_ROOM := 4
 const ROOM_CODE_LENGTH := 6
-const ROOM_CODE_ALPHABET := "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"  # excludes 0/O/1/I
+const ROOM_CODE_ALPHABET := "ABCDEFGHJKLMNPQRSTUVWXYZ"  # letters only; excludes I/O for readability
 const USERNAME_MAX_LEN := 12
 
 ## Build a message dict. Returns the exact shape the wire expects.

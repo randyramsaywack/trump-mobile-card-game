@@ -138,7 +138,7 @@ Supports single player vs AI and online multiplayer (up to 4 real players).
 - Assign new host if current host disconnects
 
 ### Room System
-- Room codes: 6 characters, alphanumeric (e.g., `A3F7K2`)
+- Room codes: 6 characters, uppercase letters only, excludes I/O for readability (e.g., `ABFKMR`)
 - Players can CREATE a room (become host) or JOIN a room via code
 - Room creator (host) can start the game with 2, 3, or 4 players — empty seats filled with AI
 - Room persists if host disconnects:

@@ -35,6 +35,12 @@ horizontal_alignment = 1
 theme_override_font_sizes/font_size = 56
 theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
 
+[node name="CopyButton" type="Button" parent="Center"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Copy Code"
+theme_override_font_sizes/font_size = 14
+
 [node name="Seat0" type="Label" parent="Center"]
 layout_mode = 2
 text = "Seat 1: Empty — AI will fill"

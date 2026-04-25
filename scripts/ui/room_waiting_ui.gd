@@ -12,10 +12,12 @@ extends Control
 ]
 @onready var start_button: Button = $Center/StartButton
 @onready var leave_button: Button = $Center/LeaveButton
+@onready var copy_button: Button = $Center/CopyButton
 
 func _ready() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	leave_button.pressed.connect(_leave)
+	copy_button.pressed.connect(_on_copy_pressed)
 	NetworkState.room_state_changed.connect(_render)
 	NetworkState.connection_state_changed.connect(_on_connection_state_changed)
 	NetworkState.error_received.connect(_on_error_received)
@@ -27,6 +29,7 @@ func _notification(what: int) -> void:
 
 func _render() -> void:
 	code_label.text = NetworkState.room_code if NetworkState.room_code != "" else "------"
+	copy_button.disabled = NetworkState.room_code == ""
 	var by_seat := {}
 	for p in NetworkState.players:
 		by_seat[int(p["seat"])] = p
@@ -45,6 +48,12 @@ func _render() -> void:
 
 func _on_start_pressed() -> void:
 	NetworkState.start_game()
+
+func _on_copy_pressed() -> void:
+	if NetworkState.room_code == "":
+		return
+	DisplayServer.clipboard_set(NetworkState.room_code)
+	_show_toast("Code copied to clipboard")
 
 func _on_connection_state_changed(state: int) -> void:
 	if state == NetworkState.ConnectionState.DISCONNECTED:

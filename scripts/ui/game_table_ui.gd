@@ -83,8 +83,12 @@ var _trick_cards_by_seat: Dictionary = {}
 
 func _ready() -> void:
 	# Safety net: ensure suit glyphs render even if the default font lacks them.
+	# iOS's default font doesn't ship U+2699 (⚙) or U+2261 (≡), so the HUD
+	# buttons need the symbol-font fallback too.
 	SuitFont.apply(trump_label)
 	SuitFont.apply(trump_watermark)
+	SuitFont.apply(settings_button)
+	SuitFont.apply(history_button)
 	timer_label.visible = false
 	_apply_card_sizing()
 	get_viewport().size_changed.connect(_apply_card_sizing)
