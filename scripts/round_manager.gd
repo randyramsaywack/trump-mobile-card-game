@@ -200,6 +200,9 @@ func declare_trump(suit: Card.Suit) -> void:
 func _ai_play_card() -> void:
 	var ai := players[current_player_seat] as AIPlayer
 	var valid := ai.hand.get_valid_cards(current_trick.led_suit, trump_suit)
+	if valid.is_empty():
+		push_error("RoundManager: AI seat %d has no valid cards" % current_player_seat)
+		return
 	var partner_seat := (current_player_seat + 2) % 4
 	var card := ai.choose_card(valid, current_trick, partner_seat)
 	play_card(current_player_seat, card)

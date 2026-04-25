@@ -21,10 +21,10 @@ func _ready() -> void:
 		add_child(p)
 		_players.append(p)
 
-func play(name: String, volume_db: float = 0.0) -> void:
-	var stream: AudioStream = STREAMS.get(name)
+func play(sfx: String, volume_db: float = 0.0) -> void:
+	var stream: AudioStream = STREAMS.get(sfx)
 	if stream == null:
-		push_warning("AudioManager: unknown sfx '%s'" % name)
+		push_warning("AudioManager: unknown sfx '%s'" % sfx)
 		return
 	var p := _players[_next]
 	_next = (_next + 1) % POOL_SIZE

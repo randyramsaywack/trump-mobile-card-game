@@ -25,7 +25,7 @@ const RANK_NAMES: Dictionary = {
 }
 
 var suit: Suit
-var rank: Rank
+var rank: Rank = Rank.TWO
 
 func _init(s: Suit, r: Rank) -> void:
     suit = s
