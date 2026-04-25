@@ -4,9 +4,11 @@
 #
 # Steps:
 #   1. Re-export the trump-server binary via Godot headless mode
-#   2. scp it to the VM (preserving execute mode)
-#   3. Relabel for SELinux (Oracle Linux blocks exec from user_home_t)
-#   4. Restart the systemd service and print status
+#   2. Stop the service (the running binary holds an open file handle —
+#      scp into the live path fails with "dest open ... Failure")
+#   3. scp it to the VM (preserving execute mode)
+#   4. Relabel for SELinux (Oracle Linux blocks exec from user_home_t),
+#      start the service, and print status
 #
 # The Linux Server (ARM64) preset has binary_format/embed_pck=true, so the
 # game data is baked into the binary. If embed_pck is ever flipped to false,
@@ -34,13 +36,16 @@ if [ ! -x "$LOCAL_BIN" ]; then
     exit 1
 fi
 
-echo "==> [2/4] Copying $LOCAL_BIN to $SSH_HOST:$REMOTE_DIR/$(basename "$LOCAL_BIN")"
+echo "==> [2/5] Stopping $SERVICE_NAME on $SSH_HOST"
+ssh "$SSH_HOST" "sudo systemctl stop $SERVICE_NAME"
+
+echo "==> [3/5] Copying $LOCAL_BIN to $SSH_HOST:$REMOTE_DIR/$(basename "$LOCAL_BIN")"
 scp -p "$LOCAL_BIN" "$SSH_HOST:$REMOTE_DIR/$(basename "$LOCAL_BIN")"
 
-echo "==> [3/4] SELinux relabel + restart on $SSH_HOST"
-ssh "$SSH_HOST" "sudo chcon -t bin_t $REMOTE_DIR/$(basename "$LOCAL_BIN") && sudo systemctl restart $SERVICE_NAME"
+echo "==> [4/5] SELinux relabel + start on $SSH_HOST"
+ssh "$SSH_HOST" "sudo chcon -t bin_t $REMOTE_DIR/$(basename "$LOCAL_BIN") && sudo systemctl start $SERVICE_NAME"
 
-echo "==> [4/4] Service status"
+echo "==> [5/5] Service status"
 ssh "$SSH_HOST" "sudo systemctl status $SERVICE_NAME --no-pager"
 
 echo "==> Done. Tail logs with:"
