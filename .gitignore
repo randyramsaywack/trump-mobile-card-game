@@ -11,6 +11,10 @@
 *.pck
 *.zip
 
+# Linux/headless server export
+*.x86_64
+Trump.sh
+
 # iOS build output (keep Xcode project sources)
 *.ipa
 build/
