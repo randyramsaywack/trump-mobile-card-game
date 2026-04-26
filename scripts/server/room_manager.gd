@@ -37,13 +37,18 @@ func room_for_peer(peer_id: int) -> Room:
 
 # ── create_room ───────────────────────────────────────────────────────────────
 
-func handle_create_room(peer_id: int) -> Array:
+func handle_create_room(peer_id: int, data: Dictionary = {}) -> Array:
 	if not is_registered(peer_id):
 		return [_err_to(peer_id, Protocol.ERR_NOT_IN_ROOM)]
 	if _peer_to_room.has(peer_id):
 		return [_err_to(peer_id, Protocol.ERR_ALREADY_IN_ROOM)]
+	var code := _normalize_room_code(data.get("code", ""))
+	if not _is_valid_room_code(code):
+		return [_err_to(peer_id, Protocol.ERR_INVALID_ROOM_CODE)]
+	if _rooms.has(code):
+		return [_err_to(peer_id, Protocol.ERR_ROOM_EXISTS)]
 	var room := Room.new()
-	room.code = _generate_unique_code()
+	room.code = code
 	_rooms[room.code] = room
 	var entry := room.add_player(peer_id, get_username(peer_id))
 	_peer_to_room[peer_id] = room.code
@@ -58,12 +63,9 @@ func handle_join_room(peer_id: int, data: Dictionary) -> Array:
 		return [_err_to(peer_id, Protocol.ERR_NOT_IN_ROOM)]
 	if _peer_to_room.has(peer_id):
 		return [_err_to(peer_id, Protocol.ERR_ALREADY_IN_ROOM)]
-	var code := String(data.get("code", "")).to_upper()
-	if code.length() != Protocol.ROOM_CODE_LENGTH:
+	var code := _normalize_room_code(data.get("code", ""))
+	if not _is_valid_room_code(code):
 		return [_err_to(peer_id, Protocol.ERR_INVALID_ROOM_CODE)]
-	for ch in code:
-		if not Protocol.ROOM_CODE_ALPHABET.contains(ch):
-			return [_err_to(peer_id, Protocol.ERR_INVALID_ROOM_CODE)]
 	var room: Room = _rooms.get(code, null)
 	if room == null:
 		return [_err_to(peer_id, Protocol.ERR_ROOM_NOT_FOUND)]
@@ -313,16 +315,13 @@ func _err_msg(code: String) -> Dictionary:
 		"message": String(Protocol.ERROR_MESSAGES.get(code, code)),
 	})
 
-func _generate_unique_code() -> String:
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
-	for _attempt in 64:
-		var s := ""
-		for _i in Protocol.ROOM_CODE_LENGTH:
-			var idx := rng.randi_range(0, Protocol.ROOM_CODE_ALPHABET.length() - 1)
-			s += Protocol.ROOM_CODE_ALPHABET[idx]
-		if not _rooms.has(s):
-			return s
-	# 32^6 ≈ 1.07B; 64 attempts with a handful of live rooms should never reach here.
-	push_error("RoomManager: failed to generate unique room code after 64 attempts")
-	return ""
+func _normalize_room_code(value) -> String:
+	return String(value).strip_edges().to_upper()
+
+func _is_valid_room_code(code: String) -> bool:
+	if code.length() != Protocol.ROOM_CODE_LENGTH:
+		return false
+	for ch in code:
+		if not Protocol.ROOM_CODE_ALPHABET.contains(ch):
+			return false
+	return true

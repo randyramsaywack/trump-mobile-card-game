@@ -47,6 +47,12 @@ custom_minimum_size = Vector2(0, 44)
 text = "Rejoin Last Room"
 theme_override_font_sizes/font_size = 14
 
+[node name="CreateCodeEdit" type="LineEdit" parent="Center"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+max_length = 6
+placeholder_text = "Create code (6 letters)"
+
 [node name="CreateButton" type="Button" parent="Center"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 54)

@@ -105,11 +105,11 @@ func _process(_delta: float) -> void:
 
 # ── Room actions (UI facade) ──────────────────────────────────────────────────
 
-func create_room() -> void:
-	send(Protocol.msg(Protocol.MSG_CREATE_ROOM))
+func create_room(code: String) -> void:
+	send(Protocol.msg(Protocol.MSG_CREATE_ROOM, {"code": code.strip_edges().to_upper()}))
 
 func join_room(code: String) -> void:
-	send(Protocol.msg(Protocol.MSG_JOIN_ROOM, {"code": code.to_upper()}))
+	send(Protocol.msg(Protocol.MSG_JOIN_ROOM, {"code": code.strip_edges().to_upper()}))
 
 func leave_room() -> void:
 	if connection_state != ConnectionState.IN_ROOM:

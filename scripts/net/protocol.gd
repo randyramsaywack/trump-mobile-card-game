@@ -39,6 +39,7 @@ const MSG_FULL_STATE := "full_state"
 # ── Error codes ───────────────────────────────────────────────────────────────
 const ERR_ROOM_NOT_FOUND := "ROOM_NOT_FOUND"
 const ERR_ROOM_FULL := "ROOM_FULL"
+const ERR_ROOM_EXISTS := "ROOM_EXISTS"
 const ERR_INVALID_ROOM_CODE := "INVALID_ROOM_CODE"
 const ERR_NOT_HOST := "NOT_HOST"
 const ERR_NOT_IN_ROOM := "NOT_IN_ROOM"
@@ -55,7 +56,8 @@ const ERR_NOT_ENOUGH_PLAYERS := "NOT_ENOUGH_PLAYERS"
 const ERROR_MESSAGES := {
 	ERR_ROOM_NOT_FOUND: "Room code not found.",
 	ERR_ROOM_FULL: "Room is full.",
-	ERR_INVALID_ROOM_CODE: "Room code must be 6 characters.",
+	ERR_ROOM_EXISTS: "Room code already exists.",
+	ERR_INVALID_ROOM_CODE: "Room code must be 6 letters and cannot use I or O.",
 	ERR_NOT_HOST: "Only the host can start the game.",
 	ERR_NOT_IN_ROOM: "You must join a room first.",
 	ERR_HOST_LEFT: "Host left the room.",

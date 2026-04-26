@@ -2,6 +2,7 @@ extends Node
 
 const PEERS: Array[int] = [101, 202, 303, 404]
 const NAMES: Array[String] = ["Host", "Joiner", "Third", "Fourth"]
+const ROOM_CODES: Array[String] = ["ABFKMR", "CDEGHJ", "KLMNPQ"]
 const MAX_STEPS := 600
 
 var _failures: Array[String] = []
@@ -35,7 +36,7 @@ func _run_case(human_count: int) -> void:
 	for i in human_count:
 		_room_manager.register_peer(PEERS[i], NAMES[i])
 
-	var out := _room_manager.handle_create_room(PEERS[0])
+	var out := _room_manager.handle_create_room(PEERS[0], {"code": ROOM_CODES[human_count - 2]})
 	_expect(out.size() == 1, _case_msg("create_room should return one response"))
 	if out.is_empty():
 		return

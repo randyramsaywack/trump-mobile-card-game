@@ -5,6 +5,7 @@ extends Control
 
 @onready var username_edit: LineEdit = $Center/UsernameEdit
 @onready var rejoin_button: Button = $Center/RejoinButton
+@onready var create_code_edit: LineEdit = $Center/CreateCodeEdit
 @onready var create_button: Button = $Center/CreateButton
 @onready var join_button: Button = $Center/JoinButton
 @onready var join_code_edit: LineEdit = $Center/JoinCodeEdit
@@ -21,6 +22,7 @@ func _ready() -> void:
 	# "You" placeholder so editing here never bleeds into single-player UI.
 	username_edit.text = Settings.mp_username
 	username_edit.text_changed.connect(_on_username_changed)
+	create_code_edit.text_changed.connect(_on_room_code_changed)
 	join_code_edit.text_changed.connect(_on_join_code_changed)
 	create_button.pressed.connect(_on_create_pressed)
 	join_button.pressed.connect(_on_join_pressed)
@@ -42,6 +44,11 @@ func _on_username_changed(_text: String) -> void:
 	_refresh_buttons()
 
 func _on_join_code_changed(_text: String) -> void:
+	_normalize_code_edit(join_code_edit)
+	_refresh_buttons()
+
+func _on_room_code_changed(_text: String) -> void:
+	_normalize_code_edit(create_code_edit)
 	_refresh_buttons()
 
 func _current_username() -> String:
@@ -49,9 +56,9 @@ func _current_username() -> String:
 
 func _refresh_buttons() -> void:
 	var valid := _current_username() != ""
-	create_button.disabled = not valid
+	create_button.disabled = not valid or not _is_valid_room_code(create_code_edit.text)
 	join_button.disabled = not valid
-	join_confirm_button.disabled = not valid or join_code_edit.text.strip_edges().length() != Protocol.ROOM_CODE_LENGTH
+	join_confirm_button.disabled = not valid or not _is_valid_room_code(join_code_edit.text)
 	rejoin_button.disabled = not valid
 
 func _refresh_status() -> void:
@@ -70,9 +77,13 @@ func _persist_username() -> void:
 	NetworkState.local_username = Settings.mp_username
 
 func _on_create_pressed() -> void:
+	var code := _normalize_room_code(create_code_edit.text)
+	if not _is_valid_room_code(code):
+		status_label.text = "Enter a 6-letter room code. Do not use I or O."
+		return
 	_persist_username()
 	_pending_action = "create"
-	_start_connection_then(func(): NetworkState.create_room())
+	_start_connection_then(func(): NetworkState.create_room(code))
 
 func _on_join_pressed() -> void:
 	# Reveal the code input; actual send happens in _on_join_confirm_pressed.
@@ -82,12 +93,32 @@ func _on_join_pressed() -> void:
 	_refresh_buttons()
 
 func _on_join_confirm_pressed() -> void:
-	var code := join_code_edit.text.strip_edges().to_upper()
-	if code.length() != Protocol.ROOM_CODE_LENGTH:
+	var code := _normalize_room_code(join_code_edit.text)
+	if not _is_valid_room_code(code):
 		return
 	_persist_username()
 	_pending_action = "join"
 	_start_connection_then(func(): NetworkState.join_room(code))
+
+func _normalize_room_code(value: String) -> String:
+	return value.strip_edges().to_upper()
+
+func _is_valid_room_code(value: String) -> bool:
+	var code := _normalize_room_code(value)
+	if code.length() != Protocol.ROOM_CODE_LENGTH:
+		return false
+	for ch in code:
+		if not Protocol.ROOM_CODE_ALPHABET.contains(ch):
+			return false
+	return true
+
+func _normalize_code_edit(edit: LineEdit) -> void:
+	var normalized := _normalize_room_code(edit.text)
+	if normalized == edit.text:
+		return
+	var caret := edit.caret_column
+	edit.text = normalized
+	edit.caret_column = mini(caret, edit.text.length())
 
 ## Pre-fills the join field with the saved code and submits — same path as a
 ## manual join, so server-side rules (room exists / not full / not started)

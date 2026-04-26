@@ -59,7 +59,7 @@ func _handle(sender: int, msg: Dictionary) -> void:
 		Protocol.MSG_HELLO:
 			_handle_hello(sender, data)
 		Protocol.MSG_CREATE_ROOM:
-			_require_registered(sender, func(): _dispatch_outgoing(_rooms.handle_create_room(sender)))
+			_require_registered(sender, func(): _dispatch_outgoing(_rooms.handle_create_room(sender, data)))
 		Protocol.MSG_JOIN_ROOM:
 			_require_registered(sender, func(): _dispatch_outgoing(_rooms.handle_join_room(sender, data)))
 		Protocol.MSG_LEAVE_ROOM:

@@ -3,6 +3,7 @@ extends Node
 const PEERS: Array[int] = [101, 202, 303, 404]
 const REJOIN_PEER := 505
 const NAMES: Array[String] = ["Host", "Lefty", "Partner", "Righty"]
+const ROOM_CODES: Array[String] = ["ABFKMR", "CDEGHJ", "KLMNPQ", "RSTUVW"]
 const MAX_DRIVE_STEPS := 700
 
 var _failures: Array[String] = []
@@ -159,7 +160,7 @@ func _started_context(human_count: int) -> Dictionary:
 	var manager := RoomManager.new()
 	for i in human_count:
 		manager.register_peer(PEERS[i], NAMES[i])
-	var out := manager.handle_create_room(PEERS[0])
+	var out := manager.handle_create_room(PEERS[0], {"code": ROOM_CODES[human_count - 1]})
 	var code := String(out[0][1]["data"]["code"])
 	for i in range(1, human_count):
 		manager.handle_join_room(PEERS[i], {"code": code})

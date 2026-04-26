@@ -118,8 +118,13 @@ func _test_server_validation_errors() -> void:
 	var out := manager.handle_play_card(999, {"card": {"suit": 0, "rank": 2}})
 	_expect(_error_code(out) == Protocol.ERR_NOT_IN_GAME, "Server should reject play_card from peer not in a game")
 
-	out = manager.handle_create_room(PEERS[0])
+	out = manager.handle_create_room(PEERS[0], {"code": "ABFKMR"})
 	var code := String(out[0][1]["data"]["code"])
+	_expect(code == "ABFKMR", "Server should create the host-requested room code")
+	out = manager.handle_create_room(PEERS[1], {"code": "ABFKMR"})
+	_expect(_error_code(out) == Protocol.ERR_ROOM_EXISTS, "Server should reject duplicate custom room codes")
+	out = manager.handle_create_room(PEERS[1], {"code": "BADIO1"})
+	_expect(_error_code(out) == Protocol.ERR_INVALID_ROOM_CODE, "Server should reject invalid custom room codes")
 	for i in range(1, PEERS.size()):
 		manager.handle_join_room(PEERS[i], {"code": code})
 	manager.handle_start_game(PEERS[0])

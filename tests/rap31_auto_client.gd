@@ -68,7 +68,7 @@ func _on_connection_state_changed(state: int) -> void:
 	if state != NetworkState.ConnectionState.CONNECTED:
 		return
 	if _role == "host":
-		NetworkState.create_room()
+		NetworkState.create_room(_room_code_to_create())
 	else:
 		var code := FileAccess.get_file_as_string(_code_file).strip_edges().to_upper()
 		print("[rap31-auto:%s] joining %s" % [_username, code])
@@ -96,6 +96,13 @@ func _write_code_file() -> void:
 	f.store_string(NetworkState.room_code)
 	f.close()
 	print("[rap31-auto:%s] room code %s" % [_username, NetworkState.room_code])
+
+func _room_code_to_create() -> String:
+	if _code_file != "" and FileAccess.file_exists(_code_file):
+		var existing := FileAccess.get_file_as_string(_code_file).strip_edges().to_upper()
+		if existing.length() == Protocol.ROOM_CODE_LENGTH:
+			return existing
+	return "ABFKMR"
 
 func _connect_game_view() -> void:
 	var view := GameState.game_source as NetGameView
