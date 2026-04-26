@@ -23,6 +23,12 @@ func _ready() -> void:
 		get_tree().change_scene_to_file.call_deferred("res://tests/rap33_regression.tscn")
 		return
 
+	# Dev-only: run focused multiplayer lifecycle regressions.
+	if "--rap32-lifecycle" in OS.get_cmdline_user_args():
+		print("[bootstrap] --rap32-lifecycle — running lifecycle regressions")
+		get_tree().change_scene_to_file.call_deferred("res://tests/rap32_lifecycle.tscn")
+		return
+
 	# Dev-only: run the RAP-31 authoritative multiplayer smoke inside the
 	# normal project/autoload environment.
 	if "--rap31-smoke" in OS.get_cmdline_user_args():
