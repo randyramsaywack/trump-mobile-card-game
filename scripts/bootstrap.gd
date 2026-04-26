@@ -17,6 +17,12 @@ func _ready() -> void:
 		get_tree().root.add_child.call_deferred(runner)
 		return
 
+	# Dev-only: run focused headless rule/server validation regressions.
+	if "--rap33-regression" in OS.get_cmdline_user_args():
+		print("[bootstrap] --rap33-regression — running rule/server regressions")
+		get_tree().change_scene_to_file.call_deferred("res://tests/rap33_regression.tscn")
+		return
+
 	# Dev-only: run the RAP-31 authoritative multiplayer smoke inside the
 	# normal project/autoload environment.
 	if "--rap31-smoke" in OS.get_cmdline_user_args():
