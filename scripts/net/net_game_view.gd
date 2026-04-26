@@ -300,6 +300,14 @@ func _apply_trick_completed(data: Dictionary) -> void:
 	var winner_seat := _to_display_seat(int(data["winner_seat"]))
 	books = _swap_team_array(data.get("books", [0, 0]) as Array)
 	books_by_seat = _rotate_seat_int_array(data.get("books_by_seat", [0, 0, 0, 0]) as Array)
+	if data.has("trick_history"):
+		trick_history = _deserialize_trick_history(data.get("trick_history", []) as Array)
+	elif data.has("trick_history_entry"):
+		var raw_entry: Dictionary = data.get("trick_history_entry", {}) as Dictionary
+		if not raw_entry.is_empty():
+			var parsed := _deserialize_trick_history([raw_entry])
+			if not parsed.is_empty():
+				trick_history.append(parsed[0])
 	current_trick = null
 	state = RoundState.TRICK_DISPLAY
 	current_turn_deadline_msec = 0
@@ -348,7 +356,7 @@ func _apply_full_state(data: Dictionary) -> void:
 	session_wins = _swap_team_array(data.get("session_wins", [0, 0]) as Array)
 	books = _swap_team_array(data.get("books", [0, 0]) as Array)
 	books_by_seat = _rotate_seat_int_array(data.get("books_by_seat", [0, 0, 0, 0]) as Array)
-	trick_history.clear()
+	trick_history = _deserialize_trick_history(data.get("trick_history", []) as Array)
 
 	# Trump suit (server sends -1 if the round hasn't reached trump selection yet).
 	var trump_int := int(data.get("trump_suit", -1))
@@ -417,9 +425,14 @@ func _deserialize_trick_history(raw: Array) -> Array[Dictionary]:
 		for cp in entry["cards_played"]:
 			var server_position := String(cp["position"])
 			var display_seat := _to_display_seat(_seat_for_history_position(server_position))
+			var player_label: String = DISPLAY_SEAT_NAMES[display_seat]
+			if display_seat >= 0 and display_seat < seat_usernames.size():
+				player_label = String(seat_usernames[display_seat])
+				if player_label == "":
+					player_label = DISPLAY_SEAT_NAMES[display_seat]
 			cards_played.append({
 				"position": _history_position_for_display_seat(display_seat),
-				"player": DISPLAY_SEAT_NAMES[display_seat],
+				"player": player_label,
 				"card": Protocol.dict_to_card(cp["card"]),
 			})
 		var server_team := 0 if String(entry["winning_team"]) == "player_team" else 1

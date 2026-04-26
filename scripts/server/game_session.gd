@@ -320,10 +320,15 @@ func _on_card_played(seat_index: int, card: Card) -> void:
 	}))
 
 func _on_trick_completed(winner_seat: int, books: Array, books_by_seat: Array) -> void:
+	var history_entry: Dictionary = {}
+	if not round_manager.trick_history.is_empty():
+		var last_index := round_manager.trick_history.size() - 1
+		history_entry = _serialize_trick_history_entry(round_manager.trick_history[last_index] as Dictionary)
 	_append_to_all(Protocol.msg(Protocol.MSG_TRICK_COMPLETED, {
 		"winner_seat": winner_seat,
 		"books": books.duplicate(),
 		"books_by_seat": books_by_seat.duplicate(),
+		"trick_history_entry": history_entry,
 	}))
 
 func _on_round_ended(winning_team: int) -> void:
@@ -452,6 +457,7 @@ func build_full_state_for(seat: int) -> Dictionary:
 		"hand_counts": hand_counts,
 		"your_hand": your_hand,
 		"current_trick": current_trick_cards,
+		"trick_history": _serialize_trick_history(),
 		"between_rounds": between_rounds,
 		"seconds_remaining": seconds_remaining,
 		"round_number": round_number,
@@ -460,21 +466,24 @@ func build_full_state_for(seat: int) -> Dictionary:
 func _serialize_trick_history() -> Array:
 	var out: Array = []
 	for entry in round_manager.trick_history:
-		var cards_played: Array = []
-		for cp in entry["cards_played"]:
-			cards_played.append({
-				"position": cp["position"],
-				"player": cp["player"],
-				"card": Protocol.card_to_dict(cp["card"]),
-			})
-		var winning_card := Protocol.card_to_dict(entry["winning_card"])
-		out.append({
-			"trick_number": entry["trick_number"],
-			"winning_team": entry["winning_team"],
-			"winning_card": winning_card,
-			"cards_played": cards_played,
-		})
+		out.append(_serialize_trick_history_entry(entry as Dictionary))
 	return out
+
+func _serialize_trick_history_entry(entry: Dictionary) -> Dictionary:
+	var cards_played: Array = []
+	for cp in entry["cards_played"]:
+		cards_played.append({
+			"position": cp["position"],
+			"player": cp["player"],
+			"card": Protocol.card_to_dict(cp["card"]),
+		})
+	var winning_card := Protocol.card_to_dict(entry["winning_card"])
+	return {
+		"trick_number": entry["trick_number"],
+		"winning_team": entry["winning_team"],
+		"winning_card": winning_card,
+		"cards_played": cards_played,
+	}
 
 func _err(peer_id: int, error_code: String) -> Array:
 	return [[peer_id, Protocol.msg(Protocol.MSG_ERROR, {

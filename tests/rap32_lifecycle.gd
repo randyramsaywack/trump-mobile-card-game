@@ -24,6 +24,7 @@ func _run() -> void:
 	_test_timer_expiry_trump_and_card_turn()
 	_test_mid_round_rejoin_full_state()
 	_test_between_round_rejoin_full_state()
+	_test_live_trick_history_broadcasts_before_round_end()
 	_test_trick_history_rotates_to_local_perspective()
 
 func _test_non_host_disconnect_active_turn_ai_takeover() -> void:
@@ -129,9 +130,23 @@ func _test_between_round_rejoin_full_state() -> void:
 	_expect(int(snapshot.get("your_seat", -1)) == leaving_seat, "Between-round rejoin should reclaim original seat")
 	_cleanup_context(ctx)
 
+func _test_live_trick_history_broadcasts_before_round_end() -> void:
+	var ctx := _started_context(4)
+	var session: GameSession = ctx.session
+	_declare_trump_if_needed(session)
+	var out := _drive_to_first_trick_completed(session)
+	_expect(not out.is_empty(), "Setup should complete one trick before round end")
+	var completed := _message_data(out, Protocol.MSG_TRICK_COMPLETED)
+	_expect(completed.has("trick_history_entry"), "TRICK_COMPLETED should carry live trick history entry")
+	var entry := completed.get("trick_history_entry", {}) as Dictionary
+	_expect(int(entry.get("trick_number", 0)) == 1, "Live trick history entry should identify first trick")
+	_expect((entry.get("cards_played", []) as Array).size() == 4, "Live trick history entry should include all four played cards")
+	_cleanup_context(ctx)
+
 func _test_trick_history_rotates_to_local_perspective() -> void:
 	var view := NetGameView.new()
 	view._server_local_seat = 1
+	view.seat_usernames = ["You", "PartnerName", "Righty", "HostName"]
 	var raw := [{
 		"trick_number": 1,
 		"winning_team": "opponent_team",
@@ -152,6 +167,7 @@ func _test_trick_history_rotates_to_local_perspective() -> void:
 		var card_entry: Dictionary = cp
 		by_pos[String(card_entry["position"])] = card_entry
 	_expect(String((by_pos["bottom"] as Dictionary)["player"]) == "You", "Local server seat should render as You at bottom")
+	_expect(String((by_pos["right"] as Dictionary)["player"]) == "HostName", "Opponent history card should use the multiplayer username")
 	var bottom_card: Card = (by_pos["bottom"] as Dictionary)["card"] as Card
 	_expect(bottom_card.suit == Card.Suit.SPADES and bottom_card.rank == Card.Rank.ACE, "Local bottom history card should be the original server-left card")
 	view.free()
@@ -173,17 +189,17 @@ func _started_context(human_count: int) -> Dictionary:
 		"code": code,
 	}
 
-func _declare_trump_if_needed(session: GameSession) -> void:
+func _declare_trump_if_needed(session: GameSession) -> Array:
 	if session.round_manager.state != RoundManager.RoundState.TRUMP_SELECTION:
-		return
+		return []
 	var seat := session.round_manager.trump_selector_seat
 	var peer := _peer_for_seat(session, seat)
 	var suit := session.players[seat].hand.dominant_suit()
 	if peer > 0:
-		session.handle_declare_trump(peer, {"suit": int(suit)})
+		return session.handle_declare_trump(peer, {"suit": int(suit)})
 	else:
 		session.round_manager.declare_trump(suit)
-		session.drain_events()
+		return session.drain_events()
 
 func _advance_to_non_host_turn(session: GameSession) -> int:
 	for _i in 80:
@@ -197,25 +213,28 @@ func _advance_to_non_host_turn(session: GameSession) -> int:
 			session.tick(0.5)
 	return -1
 
-func _play_one_human_or_ai_action(session: GameSession) -> void:
+func _play_one_human_or_ai_action(session: GameSession) -> Array:
 	var rm := session.round_manager
+	var out: Array = []
 	match rm.state:
 		RoundManager.RoundState.TRUMP_SELECTION:
-			_declare_trump_if_needed(session)
+			out = _declare_trump_if_needed(session)
 		RoundManager.RoundState.PLAYER_TURN:
 			var seat := rm.current_player_seat
 			var peer := _peer_for_seat(session, seat)
 			if peer > 0:
 				var valid := session.players[seat].hand.get_valid_cards(rm.current_trick.led_suit, rm.trump_suit)
 				if not valid.is_empty():
-					session.handle_play_card(peer, {"card": Protocol.card_to_dict(valid[0])})
+					out = session.handle_play_card(peer, {"card": Protocol.card_to_dict(valid[0])})
 			else:
 				_tick_until_progress(session, rm.state)
 		RoundManager.RoundState.TRICK_DISPLAY, RoundManager.RoundState.TRICK_RESOLUTION:
 			_tick_until_progress(session, rm.state)
 		_:
 			session.tick(0.25)
-	session.drain_events()
+	if out.is_empty():
+		out = session.drain_events()
+	return out
 
 func _drive_to_round_end(session: GameSession) -> void:
 	var steps := 0
@@ -223,6 +242,14 @@ func _drive_to_round_end(session: GameSession) -> void:
 		steps += 1
 		_play_one_human_or_ai_action(session)
 	_expect(session.between_rounds, "Round should end within drive limit")
+
+func _drive_to_first_trick_completed(session: GameSession) -> Array:
+	for _i in MAX_DRIVE_STEPS:
+		var before := session.round_manager.trick_history.size()
+		var out := _play_one_human_or_ai_action(session)
+		if session.round_manager.trick_history.size() > before:
+			return out
+	return []
 
 func _tick_until_progress(session: GameSession, previous_state: int) -> void:
 	for _i in 16:
