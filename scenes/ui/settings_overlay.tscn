@@ -27,23 +27,23 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-content_margin_left = 18.0
-content_margin_top = 16.0
-content_margin_right = 18.0
-content_margin_bottom = 16.0
-bg_color = Color(0.08, 0.19, 0.12, 0.98)
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.055, 0.165, 0.1, 0.985)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.788, 0.659, 0.298, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 shadow_color = Color(0, 0, 0, 0.5)
-shadow_size = 6
-shadow_offset = Vector2(0, 3)
+shadow_size = 10
+shadow_offset = Vector2(0, -2)
 
 [node name="SettingsOverlay" type="Control"]
 script = ExtResource("1_settings")
@@ -57,22 +57,25 @@ z_index = 200
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.55)
+color = Color(0, 0, 0, 0.62)
 
 [node name="Panel" type="PanelContainer" parent="."]
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -160.0
-offset_top = -260.0
-offset_right = 160.0
-offset_bottom = 260.0
+anchor_left = 0.045
+anchor_top = 0.46
+anchor_right = 0.955
+anchor_bottom = 1.0
+offset_bottom = -12.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="VBox" type="VBoxContainer" parent="Panel"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
+
+[node name="Handle" type="ColorRect" parent="Panel/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(44, 4)
+size_flags_horizontal = 4
+color = Color(0.788, 0.659, 0.298, 0.55)
 
 [node name="Title" type="Label" parent="Panel/VBox"]
 layout_mode = 2
@@ -225,7 +228,7 @@ visible = false
 [node name="MainMenuButton" type="Button" parent="Panel/VBox"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(150, 40)
+custom_minimum_size = Vector2(170, 42)
 text = "Main Menu"
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
 theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
@@ -237,7 +240,7 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 [node name="CloseButton" type="Button" parent="Panel/VBox"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(100, 36)
+custom_minimum_size = Vector2(120, 40)
 text = "Close"
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
 theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)

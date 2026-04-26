@@ -337,6 +337,10 @@ func _apply_card_sizing() -> void:
 	var hud_height: float = 92.0
 	hud.offset_top = safe_top
 	hud.offset_bottom = safe_top + hud_height
+	var hud_strip := get_node_or_null("HUDStrip") as Control
+	if hud_strip != null:
+		hud_strip.offset_top = safe_top
+		hud_strip.offset_bottom = safe_top + hud_height
 	# Gap between avatars and adjacent card rows.
 	var name_gap: float = 10.0
 	var avatar_h: float = 66.0  # 48 circle + 2 spacing + ~14 label

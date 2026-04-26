@@ -4,16 +4,16 @@
 [ext_resource type="Script" path="res://scripts/ui/safe_area_margins.gd" id="2_safe"]
 
 [sub_resource type="StyleBoxFlat" id="SB_btn_normal"]
-bg_color = Color(0.08, 0.19, 0.12, 1)
+bg_color = Color(0.065, 0.17, 0.105, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.788, 0.659, 0.298, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 shadow_color = Color(0, 0, 0, 0.35)
 shadow_size = 3
 shadow_offset = Vector2(0, 2)
@@ -25,10 +25,10 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(1, 0.82, 0.38, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 shadow_color = Color(0, 0, 0, 0.35)
 shadow_size = 3
 shadow_offset = Vector2(0, 2)
@@ -47,11 +47,11 @@ color = Color(0.102, 0.29, 0.18, 1)
 
 [node name="CenterLayout" type="VBoxContainer" parent="."]
 script = ExtResource("2_safe")
-anchor_left = 0.1
-anchor_top = 0.12
-anchor_right = 0.9
-anchor_bottom = 0.92
-theme_override_constants/separation = 14
+anchor_left = 0.08
+anchor_top = 0.1
+anchor_right = 0.92
+anchor_bottom = 0.94
+theme_override_constants/separation = 10
 base_gutter = 12.0
 
 [node name="TitleLabel" type="Label" parent="CenterLayout"]
@@ -59,7 +59,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 text = "TRUMP"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 72
+theme_override_font_sizes/font_size = 60
 theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
 theme_override_colors/font_outline_color = Color(0.45, 0.35, 0.12, 1)
 theme_override_constants/outline_size = 4
@@ -115,13 +115,13 @@ layout_mode = 2
 size_flags_horizontal = 4
 text = "CARD GAME"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 0.6)
 
 [node name="SinglePlayerBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(220, 54)
+custom_minimum_size = Vector2(260, 58)
 text = "Single Player"
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
@@ -134,7 +134,7 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 [node name="MultiplayerBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(220, 54)
+custom_minimum_size = Vector2(260, 58)
 text = "Multiplayer"
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
@@ -148,9 +148,9 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 [node name="OptionsBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(220, 48)
-text = "Options"
-theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(260, 42)
+text = "Settings"
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
 theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
 theme_override_styles/normal = SubResource("SB_btn_normal")
@@ -161,9 +161,9 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 [node name="StatsBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(220, 48)
+custom_minimum_size = Vector2(260, 42)
 text = "Stats"
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
 theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
 theme_override_styles/normal = SubResource("SB_btn_normal")
@@ -174,9 +174,9 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 [node name="HowToPlayBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(220, 48)
+custom_minimum_size = Vector2(260, 42)
 text = "How to Play"
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
 theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
 theme_override_styles/normal = SubResource("SB_btn_normal")
@@ -187,9 +187,9 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 [node name="CreditsBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(220, 48)
+custom_minimum_size = Vector2(260, 42)
 text = "Credits"
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
 theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
 theme_override_styles/normal = SubResource("SB_btn_normal")

@@ -4,6 +4,8 @@ signal closed()
 
 @onready var volume_slider: HSlider = $Panel/VBox/VolumeRow/VolumeSlider
 @onready var volume_value: Label = $Panel/VBox/VolumeRow/VolumeValue
+@onready var difficulty_label: Label = $Panel/VBox/DifficultyLabel
+@onready var difficulty_row: HBoxContainer = $Panel/VBox/DifficultyRow
 @onready var easy_btn: Button = $Panel/VBox/DifficultyRow/EasyBtn
 @onready var medium_btn: Button = $Panel/VBox/DifficultyRow/MediumBtn
 @onready var hard_btn: Button = $Panel/VBox/DifficultyRow/HardBtn
@@ -86,9 +88,16 @@ func _refresh_room_action() -> void:
 	if room_status_label == null or main_menu_button == null:
 		return
 	if GameState.multiplayer_mode and NetworkState.room_code != "":
+		GameState.ai_difficulty = AIPlayer.Difficulty.MEDIUM
+		difficulty_label.visible = false
+		difficulty_row.visible = false
+		difficulty_desc.visible = false
 		room_status_label.visible = true
 		room_status_label.text = "Room %s" % NetworkState.room_code
 		main_menu_button.text = "Leave Room"
 	else:
+		difficulty_label.visible = true
+		difficulty_row.visible = true
+		difficulty_desc.visible = true
 		room_status_label.visible = false
 		main_menu_button.text = "Main Menu"
