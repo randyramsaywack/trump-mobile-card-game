@@ -41,6 +41,15 @@ Fill from `app-store-metadata.md` → App Information section.
 
 ### 3. Upload the IPA
 
+Build the IPA with the App Store Connect build-number bump:
+
+```bash
+export ASC_KEY_ID="YOUR_KEY_ID"
+export ASC_ISSUER_ID="YOUR_ISSUER_ID"
+export ASC_PRIVATE_KEY_PATH="$HOME/AuthKey_YOUR_KEY_ID.p8"
+scripts/ios_build/build_appstore_ipa.sh
+```
+
 Use Transporter (Mac App Store) → drag `build/ipa-appstore/Trump.ipa` → **Deliver**.
 
 Wait ~10 min for processing.

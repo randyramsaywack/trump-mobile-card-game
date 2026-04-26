@@ -250,8 +250,15 @@ This means no export compliance documentation is needed and TestFlight will not 
 
 Current:
 - `MARKETING_VERSION` (version) = **1.0.0**
-- `CURRENT_PROJECT_VERSION` (build) = **1.0.2**
+- `CURRENT_PROJECT_VERSION` (build) is auto-incremented during the App Store build script.
 
-For each new TestFlight upload, bump the build number in `Trump.xcodeproj/project.pbxproj`:
-- `1.0.2` → `1.0.3` → `1.0.4` ...
-- Only bump `MARKETING_VERSION` when you ship a new user-facing version.
+For each new TestFlight upload, run:
+
+```bash
+export ASC_KEY_ID="YOUR_KEY_ID"
+export ASC_ISSUER_ID="YOUR_ISSUER_ID"
+export ASC_PRIVATE_KEY_PATH="$HOME/AuthKey_YOUR_KEY_ID.p8"
+scripts/ios_build/build_appstore_ipa.sh
+```
+
+The script reads the latest uploaded build for the current `MARKETING_VERSION` from App Store Connect and sets `CURRENT_PROJECT_VERSION` to the next build. Only bump `MARKETING_VERSION` when you ship a new user-facing version.
