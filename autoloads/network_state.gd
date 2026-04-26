@@ -119,6 +119,16 @@ func leave_room() -> void:
 	_clear_room()
 	_set_connection_state(ConnectionState.CONNECTED)
 
+## Explicit user exit path for every UI that returns to main menu from a
+## multiplayer room. Sends leave_room before clearing the local room projection
+## so the server removes the player immediately instead of waiting for an app
+## disconnect/lifecycle event.
+func leave_room_for_main_menu() -> void:
+	if connection_state == ConnectionState.IN_ROOM:
+		leave_room()
+	else:
+		GameState.clear_multiplayer_source()
+
 func start_game() -> void:
 	if not is_host:
 		return

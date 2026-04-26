@@ -24,6 +24,8 @@ var _how_to_play_overlay: Control = null
 var _credits_overlay: Control = null
 
 func _ready() -> void:
+	if NetworkState.connection_state == NetworkState.ConnectionState.IN_ROOM:
+		NetworkState.leave_room_for_main_menu()
 	# Load decorative fonts via raw bytes to bypass Godot's broken fontdata import (4.6.x).
 	# The .ttf files use the "keep" importer (see .import sidecars) so the raw
 	# bytes are bundled as-is in the exported PCK.

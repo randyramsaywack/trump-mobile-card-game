@@ -66,7 +66,7 @@ func _on_error_received(code: String, message: String) -> void:
 		_return_to_main_menu()
 
 func _leave() -> void:
-	NetworkState.leave_room()
+	NetworkState.leave_room_for_main_menu()
 	_return_to_main_menu()
 
 func _return_to_main_menu() -> void:

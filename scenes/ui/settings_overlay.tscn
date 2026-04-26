@@ -214,10 +214,18 @@ theme_override_styles/hover = SubResource("SB_btn_hover")
 theme_override_styles/pressed = SubResource("SB_btn_hover")
 theme_override_styles/focus = SubResource("SB_btn_hover")
 
+[node name="RoomStatusLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Room ------"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+visible = false
+
 [node name="MainMenuButton" type="Button" parent="Panel/VBox"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(140, 36)
+custom_minimum_size = Vector2(150, 40)
 text = "Main Menu"
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
 theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)

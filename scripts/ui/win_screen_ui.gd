@@ -77,6 +77,8 @@ func _animate_entrance() -> void:
 	tw.tween_property(buttons_container, "modulate:a", 1.0, 0.15 * m).set_delay(0.15 * m)
 
 func _on_main_menu() -> void:
+	if GameState.multiplayer_mode:
+		NetworkState.leave_room_for_main_menu()
 	var err := get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 	if err != OK:
 		push_error("WinScreen: failed to load main_menu.tscn, error: %d" % err)

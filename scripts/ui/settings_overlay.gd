@@ -10,6 +10,7 @@ signal closed()
 @onready var difficulty_desc: Label = $Panel/VBox/DifficultyDesc
 @onready var vibration_toggle: Button = $Panel/VBox/VibrationRow/VibrationToggle
 @onready var auto_sort_toggle: Button = $Panel/VBox/AutoSortRow/AutoSortToggle
+@onready var room_status_label: Label = $Panel/VBox/RoomStatusLabel
 @onready var close_button: Button = $Panel/VBox/CloseButton
 @onready var main_menu_button: Button = $Panel/VBox/MainMenuButton
 
@@ -33,6 +34,11 @@ func _ready() -> void:
 	hard_btn.pressed.connect(func(): _set_difficulty(AIPlayer.Difficulty.HARD))
 	close_button.pressed.connect(_on_close_pressed)
 	main_menu_button.pressed.connect(_on_main_menu_pressed)
+	_refresh_room_action()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and visible:
+		_refresh_room_action()
 
 func _on_volume_changed(value: float) -> void:
 	Settings.set_volume(value)
@@ -72,4 +78,17 @@ func _on_close_pressed() -> void:
 	closed.emit()
 
 func _on_main_menu_pressed() -> void:
+	if GameState.multiplayer_mode:
+		NetworkState.leave_room_for_main_menu()
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+
+func _refresh_room_action() -> void:
+	if room_status_label == null or main_menu_button == null:
+		return
+	if GameState.multiplayer_mode and NetworkState.room_code != "":
+		room_status_label.visible = true
+		room_status_label.text = "Room %s" % NetworkState.room_code
+		main_menu_button.text = "Leave Room"
+	else:
+		room_status_label.visible = false
+		main_menu_button.text = "Main Menu"
