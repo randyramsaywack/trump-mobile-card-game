@@ -56,7 +56,8 @@ func _current_username() -> String:
 
 func _refresh_buttons() -> void:
 	var valid := _current_username() != ""
-	create_button.disabled = not valid or not _is_valid_room_code(create_code_edit.text)
+	create_button.disabled = not valid or (create_code_edit.visible and not _is_valid_room_code(create_code_edit.text))
+	create_button.text = "Create" if create_code_edit.visible else "Create Room"
 	join_button.disabled = not valid
 	join_confirm_button.disabled = not valid or not _is_valid_room_code(join_code_edit.text)
 	rejoin_button.disabled = not valid
@@ -77,6 +78,12 @@ func _persist_username() -> void:
 	NetworkState.local_username = Settings.mp_username
 
 func _on_create_pressed() -> void:
+	if not create_code_edit.visible:
+		create_code_edit.visible = true
+		create_code_edit.grab_focus()
+		status_label.text = "Choose a 6-letter room code to share."
+		_refresh_buttons()
+		return
 	var code := _normalize_room_code(create_code_edit.text)
 	if not _is_valid_room_code(code):
 		status_label.text = "Enter a 6-letter room code. Do not use I or O."
