@@ -170,18 +170,9 @@ Make sure the VM's ingress security list / firewall allows UDP traffic on `Proto
 
 ### Building for iOS
 
-Use the scripted App Store build path when preparing a TestFlight/App Store Connect upload:
-
-```bash
-export ASC_KEY_ID="YOUR_KEY_ID"
-export ASC_ISSUER_ID="YOUR_ISSUER_ID"
-export ASC_PRIVATE_KEY_PATH="$HOME/AuthKey_YOUR_KEY_ID.p8"
-scripts/ios_build/build_appstore_ipa.sh
-```
-
-The script queries App Store Connect for the latest uploaded build for the current `MARKETING_VERSION`, writes the next `CURRENT_PROJECT_VERSION` into `Trump.xcodeproj/project.pbxproj`, regenerates `Trump.pck`, archives, and exports `build/ipa-appstore/Trump.ipa`.
-
-For local dry runs without App Store Connect credentials, set `ASC_ALLOW_LOCAL_FALLBACK=1`; that increments from the local Xcode project build number instead of the remote latest build.
+1. Godot → Project → Export → **iOS** preset → **Export Project** to the repo root. This regenerates `Trump.xcodeproj/`.
+2. Open `Trump.xcodeproj` in Xcode, set your signing team, archive, and upload to TestFlight.
+3. Bump `Marketing Version` (`CFBundleShortVersionString`) and `Build` (`CFBundleVersion`) before each TestFlight submission.
 
 `Trump.xcframework/` and `MoltenVK.xcframework/` are large binaries downloaded by the Godot iOS export and are gitignored. Re-exporting from Godot recreates them.
 
