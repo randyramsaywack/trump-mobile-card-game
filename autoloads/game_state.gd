@@ -123,8 +123,7 @@ func set_multiplayer_source(view: NetGameView) -> void:
 	multiplayer_mode = true
 	game_source = view
 
-## Called by NetworkState when the client leaves a multiplayer session, or
-## main_menu_ui before starting a new single-player session.
+## Called by NetworkState when the client leaves a multiplayer session.
 func clear_multiplayer_source() -> void:
 	multiplayer_mode = false
 	game_source = round_manager

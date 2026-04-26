@@ -60,11 +60,12 @@ func _current_username() -> String:
 
 func _refresh_buttons() -> void:
 	var valid := _current_username() != ""
+	var active_room := _has_active_room()
 	create_tab_button.button_pressed = _mode == "create"
 	join_tab_button.button_pressed = _mode == "join"
-	create_button.disabled = not valid or not _is_valid_room_code(create_code_edit.text)
-	join_confirm_button.disabled = not valid or not _is_valid_room_code(join_code_edit.text)
-	rejoin_button.disabled = not valid
+	create_button.disabled = active_room or not valid or not _is_valid_room_code(create_code_edit.text)
+	join_confirm_button.disabled = active_room or not valid or not _is_valid_room_code(join_code_edit.text)
+	rejoin_button.disabled = not active_room and not valid
 
 func _refresh_status() -> void:
 	match NetworkState.connection_state:
@@ -75,7 +76,7 @@ func _refresh_status() -> void:
 		NetworkState.ConnectionState.CONNECTED:
 			status_label.text = "Connected"
 		NetworkState.ConnectionState.IN_ROOM:
-			status_label.text = "In room"
+			status_label.text = "Connected to room %s" % NetworkState.room_code
 
 func _persist_username() -> void:
 	Settings.set_mp_username(_current_username())
@@ -105,7 +106,8 @@ func _set_mode(mode: String) -> void:
 	create_button.visible = create_mode
 	join_code_edit.visible = not create_mode
 	join_confirm_button.visible = not create_mode
-	status_label.text = "Choose a 6-letter room code to share." if create_mode else "Enter the shared room code."
+	if NetworkState.connection_state != NetworkState.ConnectionState.IN_ROOM:
+		status_label.text = "Choose a 6-letter room code to share." if create_mode else "Enter the shared room code."
 	if create_mode:
 		create_code_edit.grab_focus()
 	else:
@@ -132,11 +134,12 @@ func _normalize_code_edit(edit: LineEdit) -> void:
 	edit.text = normalized
 	edit.caret_column = mini(caret, edit.text.length())
 
-## Pre-fills the join field with the saved code and submits — same path as a
-## manual join, so server-side rules (room exists / not full / not started)
-## apply unchanged. Mid-game rejoin needs server-side seat reclaim and is not
-## supported yet; until then this works for rooms still in WAITING.
+## Active rooms resume locally without reconnecting. Otherwise this pre-fills
+## the join field with the saved code and submits through the normal join path.
 func _on_rejoin_pressed() -> void:
+	if _has_active_room():
+		_resume_active_room()
+		return
 	var code := Settings.last_room_code
 	if code.length() != Protocol.ROOM_CODE_LENGTH:
 		return
@@ -147,12 +150,28 @@ func _on_rejoin_pressed() -> void:
 	_start_connection_then(func(): NetworkState.join_room(code))
 
 func _refresh_rejoin_button() -> void:
+	if _has_active_room():
+		rejoin_button.text = "Resume Room (%s)" % NetworkState.room_code
+		rejoin_button.visible = true
+		return
 	var code := Settings.last_room_code
 	if code.length() == Protocol.ROOM_CODE_LENGTH:
 		rejoin_button.text = "Rejoin Last Room (%s)" % code
 		rejoin_button.visible = true
 	else:
 		rejoin_button.visible = false
+
+func _has_active_room() -> bool:
+	return NetworkState.connection_state == NetworkState.ConnectionState.IN_ROOM \
+			and NetworkState.room_code.length() == Protocol.ROOM_CODE_LENGTH
+
+func _resume_active_room() -> void:
+	var scene := "res://scenes/ui/room_waiting.tscn"
+	if GameState.multiplayer_mode and GameState.game_source is NetGameView:
+		scene = "res://scenes/game_table.tscn"
+	var err := get_tree().change_scene_to_file(scene)
+	if err != OK:
+		push_error("MultiplayerMenu: failed to resume active room scene %s, err=%d" % [scene, err])
 
 ## Connects if needed, then runs `action` once the handshake has completed.
 ## `action` is fired from the connection_state_changed handler below.
@@ -167,6 +186,8 @@ func _start_connection_then(action: Callable) -> void:
 	NetworkState.connect_to_server(_current_username())
 
 func _on_connection_state_changed(state: int) -> void:
+	_refresh_rejoin_button()
+	_refresh_buttons()
 	_refresh_status()
 	if state == NetworkState.ConnectionState.CONNECTED and _post_connect_action.is_valid():
 		var cb := _post_connect_action
@@ -174,6 +195,9 @@ func _on_connection_state_changed(state: int) -> void:
 		cb.call()
 
 func _on_room_state_changed() -> void:
+	_refresh_rejoin_button()
+	_refresh_buttons()
+	_refresh_status()
 	if NetworkState.connection_state == NetworkState.ConnectionState.IN_ROOM and _pending_action != "":
 		_pending_action = ""
 		var err := get_tree().change_scene_to_file("res://scenes/ui/room_waiting.tscn")
@@ -188,7 +212,8 @@ func _on_error_received(code: String, message: String) -> void:
 	push_warning("MultiplayerMenu: error %s — %s" % [code, message])
 
 func _go_back() -> void:
-	NetworkState.disconnect_from_server()
+	if NetworkState.connection_state != NetworkState.ConnectionState.IN_ROOM:
+		NetworkState.disconnect_from_server()
 	var err := get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 	if err != OK:
 		push_error("MultiplayerMenu: failed to load main_menu.tscn, err=%d" % err)
