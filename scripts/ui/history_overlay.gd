@@ -13,6 +13,8 @@ signal closed()
 const COLOR_SUIT_RED := Color(0.95, 0.42, 0.38)
 const COLOR_SUIT_BLACK := Color(0.85, 0.85, 0.85)
 const COLOR_GOLD := Color(0.95, 0.82, 0.38)
+const COLOR_WIN_BG := Color(0.95, 0.82, 0.18, 0.28)
+const COLOR_WIN_BORDER := Color(1.0, 0.9, 0.22)
 const COLOR_TEXT_DIM := Color(0.75, 0.75, 0.75)
 const COLOR_TEXT := Color(0.92, 0.92, 0.92)
 
@@ -85,9 +87,14 @@ func _build_trick_row(entry: Dictionary) -> Control:
 	return row
 
 func _build_card_chip(card_entry: Dictionary, winning_card: Card) -> Control:
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+
 	var container := VBoxContainer.new()
 	container.add_theme_constant_override("separation", 1)
 	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.add_child(container)
 
 	var player_label := Label.new()
 	player_label.text = String(card_entry["player"])
@@ -97,7 +104,19 @@ func _build_card_chip(card_entry: Dictionary, winning_card: Card) -> Control:
 	container.add_child(player_label)
 
 	var card: Card = card_entry["card"] as Card
-	var is_winner := card == winning_card
+	var is_winner := _same_card(card, winning_card)
+	if is_winner:
+		var style := StyleBoxFlat.new()
+		style.bg_color = COLOR_WIN_BG
+		style.border_color = COLOR_WIN_BORDER
+		style.set_border_width_all(2)
+		style.set_corner_radius_all(6)
+		style.content_margin_left = 4
+		style.content_margin_right = 4
+		style.content_margin_top = 2
+		style.content_margin_bottom = 2
+		panel.add_theme_stylebox_override("panel", style)
+		player_label.add_theme_color_override("font_color", COLOR_WIN_BORDER)
 	var card_label := Label.new()
 	card_label.text = Card.RANK_NAMES[card.rank] + Card.SUIT_SYMBOLS[card.suit]
 	card_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -105,11 +124,14 @@ func _build_card_chip(card_entry: Dictionary, winning_card: Card) -> Control:
 	SuitFont.apply(card_label)
 	var is_red := card.suit == Card.Suit.HEARTS or card.suit == Card.Suit.DIAMONDS
 	if is_winner:
-		card_label.add_theme_color_override("font_color", COLOR_GOLD)
+		card_label.add_theme_color_override("font_color", COLOR_WIN_BORDER)
 	else:
 		card_label.add_theme_color_override("font_color", COLOR_SUIT_RED if is_red else COLOR_TEXT)
 	container.add_child(card_label)
-	return container
+	return panel
+
+func _same_card(a: Card, b: Card) -> bool:
+	return a != null and b != null and a.suit == b.suit and a.rank == b.rank
 
 func _on_close_pressed() -> void:
 	visible = false

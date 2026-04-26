@@ -23,6 +23,7 @@ func _run() -> void:
 	_test_timer_expiry_trump_and_card_turn()
 	_test_mid_round_rejoin_full_state()
 	_test_between_round_rejoin_full_state()
+	_test_trick_history_rotates_to_local_perspective()
 
 func _test_non_host_disconnect_active_turn_ai_takeover() -> void:
 	var ctx := _started_context(4)
@@ -126,6 +127,33 @@ func _test_between_round_rejoin_full_state() -> void:
 	_expect(int(snapshot.get("state", -1)) == int(RoundManager.RoundState.ROUND_OVER), "Between-round FULL_STATE should carry ROUND_OVER state")
 	_expect(int(snapshot.get("your_seat", -1)) == leaving_seat, "Between-round rejoin should reclaim original seat")
 	_cleanup_context(ctx)
+
+func _test_trick_history_rotates_to_local_perspective() -> void:
+	var view := NetGameView.new()
+	view._server_local_seat = 1
+	var raw := [{
+		"trick_number": 1,
+		"winning_team": "opponent_team",
+		"winning_card": {"suit": int(Card.Suit.SPADES), "rank": int(Card.Rank.ACE)},
+		"cards_played": [
+			{"position": "bottom", "player": "You", "card": {"suit": int(Card.Suit.HEARTS), "rank": int(Card.Rank.TWO)}},
+			{"position": "left", "player": "Left", "card": {"suit": int(Card.Suit.SPADES), "rank": int(Card.Rank.ACE)}},
+			{"position": "top", "player": "Partner", "card": {"suit": int(Card.Suit.HEARTS), "rank": int(Card.Rank.KING)}},
+			{"position": "right", "player": "Right", "card": {"suit": int(Card.Suit.CLUBS), "rank": int(Card.Rank.THREE)}},
+		],
+	}]
+	var history := view._deserialize_trick_history(raw)
+	_expect(history.size() == 1, "Trick history should deserialize one entry")
+	var entry: Dictionary = history[0]
+	_expect(String(entry["winning_team"]) == "player_team", "Odd-seat multiplayer history should swap winning team into local perspective")
+	var by_pos := {}
+	for cp in entry["cards_played"]:
+		var card_entry: Dictionary = cp
+		by_pos[String(card_entry["position"])] = card_entry
+	_expect(String((by_pos["bottom"] as Dictionary)["player"]) == "You", "Local server seat should render as You at bottom")
+	var bottom_card: Card = (by_pos["bottom"] as Dictionary)["card"] as Card
+	_expect(bottom_card.suit == Card.Suit.SPADES and bottom_card.rank == Card.Rank.ACE, "Local bottom history card should be the original server-left card")
+	view.free()
 
 func _started_context(human_count: int) -> Dictionary:
 	var manager := RoomManager.new()

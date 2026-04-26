@@ -415,15 +415,45 @@ func _deserialize_trick_history(raw: Array) -> Array[Dictionary]:
 	for entry in raw:
 		var cards_played: Array = []
 		for cp in entry["cards_played"]:
+			var server_position := String(cp["position"])
+			var display_seat := _to_display_seat(_seat_for_history_position(server_position))
 			cards_played.append({
-				"position": cp["position"],
-				"player": cp["player"],
+				"position": _history_position_for_display_seat(display_seat),
+				"player": DISPLAY_SEAT_NAMES[display_seat],
 				"card": Protocol.dict_to_card(cp["card"]),
 			})
+		var server_team := 0 if String(entry["winning_team"]) == "player_team" else 1
+		var display_team := _to_display_team(server_team)
 		out.append({
 			"trick_number": int(entry["trick_number"]),
-			"winning_team": String(entry["winning_team"]),
+			"winning_team": "player_team" if display_team == 0 else "opponent_team",
 			"winning_card": Protocol.dict_to_card(entry["winning_card"]),
 			"cards_played": cards_played,
 		})
 	return out
+
+func _seat_for_history_position(position: String) -> int:
+	match position:
+		"bottom":
+			return 0
+		"left":
+			return 1
+		"top":
+			return 2
+		"right":
+			return 3
+		_:
+			return 0
+
+func _history_position_for_display_seat(seat: int) -> String:
+	match seat:
+		0:
+			return "bottom"
+		1:
+			return "left"
+		2:
+			return "top"
+		3:
+			return "right"
+		_:
+			return "bottom"
