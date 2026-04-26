@@ -123,6 +123,11 @@ func _ready() -> void:
 	DisplayServer.screen_set_keep_on(true)
 	GameState.start_session()
 	_refresh_opponent_names()
+	# Drain any buffered server events now that overlays exist. For a fresh
+	# join this is just MSG_SESSION_START + the round-start burst; for a
+	# mid-game rejoin it includes MSG_FULL_STATE which needs the overlays.
+	if GameState.multiplayer_mode:
+		(_source() as NetGameView).begin_live()
 
 func _exit_tree() -> void:
 	# Release the wake lock when leaving the game scene.
@@ -430,8 +435,12 @@ func _connect_signals() -> void:
 	src.trick_completed.connect(_on_trick_completed)
 	src.round_ended.connect(_on_round_ended)
 	if GameState.multiplayer_mode:
-		(src as NetGameView).round_starting.connect(_on_round_started)
-		(src as NetGameView).begin_live()
+		var net := src as NetGameView
+		net.round_starting.connect(_on_round_started)
+		net.full_state_applied.connect(_on_full_state_applied)
+		# Note: begin_live() is deliberately deferred to _ready's tail end so
+		# the queue drain — which can include MSG_FULL_STATE on rejoin — runs
+		# after every overlay has been instantiated.
 	else:
 		GameState.round_started.connect(_on_round_started)
 
@@ -965,6 +974,134 @@ func _clear_table() -> void:
 	books_label.text = "Books: 0–0"
 	turn_label.text = "—'s turn"
 	_clear_avatar_tricks()
+
+## Mid-game rejoin entry point. NetGameView already populated `players`,
+## `current_trick`, books, etc. from the MSG_FULL_STATE snapshot; here we snap
+## the table into matching shape without running shuffle / deal animations
+## (which would replay tricks that have already happened from the server's
+## perspective). Subsequent live events flow through the normal handlers
+## unchanged because we leave the table marked as "deal complete".
+func _on_full_state_applied(snapshot: Dictionary) -> void:
+	var net := _source() as NetGameView
+	if net == null:
+		return
+	_round_gen += 1
+	_clear_table()
+	# Mark as already past dealing so card_played / trick_completed handlers
+	# render immediately instead of buffering against a deal that won't run.
+	_deal_queue.clear()
+	_pending_card_plays.clear()
+	_pending_trick_completes.clear()
+	_pending_trump_selection.clear()
+	_pending_turn.clear()
+	_deal_busy = false
+	_shuffle_done = true
+	_initial_deal_done = true
+	_awaiting_final_deal = false
+	# Trick area state: if the snapshot has cards in flight, those slots are
+	# in use, so the next turn_started should NOT clear them.
+	_new_trick_pending = (net.current_trick == null or net.current_trick.played.is_empty())
+
+	# Build face-up hand for the local seat, face-down stacks for the others.
+	_snap_build_all_hands(net)
+
+	# In-progress trick: drop a face-up card at each slot the server says holds one.
+	if net.current_trick != null:
+		_snap_build_current_trick(net)
+
+	# HUD labels.
+	_refresh_opponent_names()
+	books_label.text = "Books: %d–%d" % [net.books[0], net.books[1]]
+	session_label.text = "Session: %d–%d" % [net.session_wins[0], net.session_wins[1]]
+	_update_avatar_tricks(net.books_by_seat)
+	if int(snapshot.get("trump_suit", -1)) >= 0:
+		trump_label.text = "Trump: " + Card.SUIT_NAMES[net.trump_suit] + " " + Card.SUIT_SYMBOLS[net.trump_suit]
+		_show_trump_watermark(net.trump_suit)
+	else:
+		trump_label.text = "Trump: —"
+		_hide_trump_watermark()
+
+	# Active actor.
+	var server_state := int(snapshot.get("state", 0))
+	var between_rounds := bool(snapshot.get("between_rounds", false))
+	if between_rounds and _win_screen_overlay != null:
+		# Server sends winning_team in display-rotated form via _swap_team_array
+		# only on round_ended; here the snapshot doesn't carry it, so derive
+		# from books (whoever has 7).
+		var winning_team := 0 if net.books[0] >= 7 else 1
+		_win_screen_overlay.call("show_result", winning_team, net.session_wins)
+		_win_screen_overlay.visible = true
+	elif server_state == int(NetGameView.RoundState.TRUMP_SELECTION):
+		var seat := net.trump_selector_seat
+		var hand: Array = []
+		if seat == 0 and net.players.size() > 0 and net.players[0] != null:
+			hand = net.players[0].hand.cards.duplicate()
+		_do_show_trump_selection(seat, hand)
+		turn_label.text = "Your turn" if seat == 0 else GameState.get_player(seat).display_name + "'s turn"
+		_set_all_avatars_inactive()
+		var sel_avatar = _get_avatar(seat)
+		if sel_avatar:
+			sel_avatar.set_active(true)
+	elif server_state == int(NetGameView.RoundState.PLAYER_TURN):
+		var seat2 := net.current_player_seat
+		var valid: Array[Card] = []
+		if seat2 == 0 and net.players.size() > 0 and net.players[0] != null:
+			valid = net.players[0].hand.get_valid_cards(
+					net.current_trick.led_suit if net.current_trick != null else -1,
+					net.trump_suit)
+		_do_apply_turn(seat2, valid)
+	else:
+		turn_label.text = "—'s turn"
+
+	call_deferred("_reposition_side_avatars")
+	# Resume done — clear the flag so future MSG_ROUND_STARTING (next round
+	# after host taps Next Round) goes through the normal animated path.
+	net.is_resuming = false
+
+## Build face-up cards for the local hand and face-down stacks for the other
+## three seats, sized to match the current viewport. Counts come from the live
+## hand sizes NetGameView populated from the snapshot.
+func _snap_build_all_hands(net: NetGameView) -> void:
+	for seat in 4:
+		var container := _get_hand_container(seat)
+		if container == null:
+			continue
+		var player := net.players[seat] if seat < net.players.size() else null
+		if player == null:
+			continue
+		var face_up := (seat == 0)
+		var size := _card_size if face_up else _small_card_size
+		for card in player.hand.cards:
+			var node := CardScene.instantiate() as PanelContainer
+			node.custom_minimum_size = size
+			node.call("setup", card if face_up else null, face_up)
+			if face_up:
+				node.connect("card_tapped", _on_card_tapped)
+				node.connect("card_play_requested", _on_card_play_requested)
+			container.add_child(node)
+	_resort_human_hand()
+
+## Drop a face-up card at each occupied trick slot. Uses the slot's global
+## position so the card lands in the same spot a normal play animation would
+## end at — keeps the layout consistent with future trick-completion animations.
+func _snap_build_current_trick(net: NetGameView) -> void:
+	for entry in net.current_trick.played:
+		var seat := int(entry["player_index"])
+		var card: Card = entry["card"] as Card
+		var slot := _get_trick_slot(seat)
+		if slot == null:
+			continue
+		var node := CardScene.instantiate() as PanelContainer
+		node.call("setup", card, true)
+		node.custom_minimum_size = _card_size
+		node.size = _card_size
+		add_child(node)
+		node.z_index = 50
+		# One frame would normally let the slot resolve its global position,
+		# but on resume the slot is already laid out from _ready; positioning
+		# here is good enough for the snap.
+		node.position = slot.global_position - global_position
+		_trick_cards_by_seat[seat] = node
 
 func _on_round_started(_dealer_seat: int, _trump_selector_seat: int) -> void:
 	_round_gen += 1

@@ -31,6 +31,10 @@ const MSG_CARD_PLAYED := "card_played"
 const MSG_TRICK_COMPLETED := "trick_completed"
 const MSG_ROUND_ENDED := "round_ended"
 const MSG_SEAT_TAKEN_OVER_BY_AI := "seat_taken_over_by_ai"
+## Sent privately to a peer that just reclaimed a vacant seat in an in-progress
+## room. Replaces the SESSION_START + ROUND_STARTING + HAND_DEALT + ... burst
+## a fresh joiner would receive — see GameSession.build_full_state_for.
+const MSG_FULL_STATE := "full_state"
 
 # ── Error codes ───────────────────────────────────────────────────────────────
 const ERR_ROOM_NOT_FOUND := "ROOM_NOT_FOUND"

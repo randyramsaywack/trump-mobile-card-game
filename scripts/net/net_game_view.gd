@@ -17,6 +17,11 @@ signal seat_taken_over_by_ai(seat_index: int, display_name: String, reason: Stri
 ## Matches GameState.round_started's arity so _on_round_started can be connected
 ## to either source without a wrapper.
 signal round_starting(dealer_seat: int, trump_selector_seat: int)
+## Fired once at the end of apply_full_state, after every other field has
+## been populated and the per-seat hand_dealt signals have been emitted.
+## game_table_ui uses this to finalize the resume: snap trick cards into the
+## trick area, show the win screen if between_rounds, etc.
+signal full_state_applied(snapshot: Dictionary)
 
 # Mirror of RoundManager's RoundState enum.
 enum RoundState {
@@ -60,6 +65,12 @@ var seat_is_ai: Array[bool] = [false, false, false, false]
 ## with seconds_remaining; cleared when the turn ends or the round wraps. UI
 ## reads this every frame and shows a countdown; 0 means "no active turn".
 var current_turn_deadline_msec: int = 0
+
+## True only while game_table_ui is bootstrapping from a MSG_FULL_STATE
+## snapshot. The UI checks this to skip the shuffle/deal animation and snap
+## cards directly into hands and trick slots — animating a mid-round resume
+## from scratch would replay tricks that have already happened.
+var is_resuming: bool = false
 
 ## Position labels used at every display seat in every mode. Display seat 0
 ## is always the local player (NetGameView rotates incoming events, SP puts
@@ -166,6 +177,8 @@ func _dispatch_event(msg: Dictionary) -> void:
 			_apply_round_ended(data)
 		Protocol.MSG_SEAT_TAKEN_OVER_BY_AI:
 			_apply_seat_taken_over(data)
+		Protocol.MSG_FULL_STATE:
+			_apply_full_state(data)
 
 # ── Per-message appliers ──────────────────────────────────────────────────────
 
@@ -300,6 +313,90 @@ func _apply_round_ended(data: Dictionary) -> void:
 	state = RoundState.ROUND_OVER
 	current_turn_deadline_msec = 0
 	round_ended.emit(winning_team)
+
+## Bootstrap from a MSG_FULL_STATE snapshot. Populates every field a fresh
+## joiner would normally accumulate from the SESSION_START + ROUND_STARTING +
+## HAND_DEALT×4 + TRUMP_DECLARED + TURN_STARTED burst, then fires a single
+## full_state_applied so game_table_ui can do an atomic snap render. We
+## deliberately do NOT route through the per-message _apply helpers — those
+## emit signals that would trigger the shuffle/deal animation pipeline.
+func _apply_full_state(data: Dictionary) -> void:
+	# Seats / usernames / display roster.
+	var seats := data.get("seats", []) as Array
+	players = []
+	players.resize(4)
+	seat_usernames = ["", "", "", ""]
+	seat_is_ai = [false, false, false, false]
+	for entry in seats:
+		var server_seat := int(entry["seat"])
+		var display_seat := _to_display_seat(server_seat)
+		var is_ai := bool(entry["is_ai"])
+		seat_is_ai[display_seat] = is_ai
+		var label: String
+		if display_seat == 0:
+			label = "You"
+		elif is_ai:
+			label = DISPLAY_SEAT_NAMES[display_seat]
+		else:
+			label = String(entry.get("username", DISPLAY_SEAT_NAMES[display_seat]))
+		seat_usernames[display_seat] = label
+		players[display_seat] = Player.new(display_seat, label, display_seat == 0)
+
+	# Round-level state. Display-seat coordinates throughout.
+	dealer_seat = _to_display_seat(int(data.get("dealer_seat", 0)))
+	trump_selector_seat = _to_display_seat(int(data.get("trump_selector_seat", 0)))
+	session_wins = _swap_team_array(data.get("session_wins", [0, 0]) as Array)
+	books = _swap_team_array(data.get("books", [0, 0]) as Array)
+	books_by_seat = _rotate_seat_int_array(data.get("books_by_seat", [0, 0, 0, 0]) as Array)
+	trick_history.clear()
+
+	# Trump suit (server sends -1 if the round hasn't reached trump selection yet).
+	var trump_int := int(data.get("trump_suit", -1))
+	if trump_int >= 0:
+		trump_suit = trump_int as Card.Suit
+
+	# The local player's hand: real Card instances. Other seats: hand.size() is
+	# all the UI reads to render face-down stacks.
+	var hand_counts := data.get("hand_counts", [0, 0, 0, 0]) as Array
+	var your_hand_raw := data.get("your_hand", []) as Array
+	for s in 4:
+		var display_seat := _to_display_seat(s)
+		var count := int(hand_counts[s]) if s < hand_counts.size() else 0
+		if s == _server_local_seat:
+			var real_cards: Array[Card] = []
+			for d in your_hand_raw:
+				var c := Protocol.dict_to_card(d as Dictionary)
+				if c != null:
+					real_cards.append(c)
+			players[display_seat].hand.add_cards(real_cards)
+		else:
+			# Synthesize placeholder cards so hand.size() returns the right count.
+			var fake: Array[Card] = []
+			for i in count:
+				fake.append(Card.new(Card.Suit.SPADES, Card.Rank.TWO))
+			players[display_seat].hand.add_cards(fake)
+
+	# In-progress trick (cards already played this trick, in play order).
+	current_trick = null
+	if trump_int >= 0:
+		current_trick = Trick.new(trump_suit)
+		var trick_data := data.get("current_trick", []) as Array
+		for entry in trick_data:
+			var server_seat := int(entry["seat"])
+			var display_seat := _to_display_seat(server_seat)
+			var card := Protocol.dict_to_card(entry["card"] as Dictionary)
+			if card != null:
+				current_trick.play_card(display_seat, card)
+
+	# Active actor + timer.
+	var server_state := int(data.get("state", int(RoundState.IDLE)))
+	state = server_state
+	var current_server_seat := int(data.get("current_player_seat", -1))
+	if current_server_seat >= 0:
+		current_player_seat = _to_display_seat(current_server_seat)
+	_arm_local_deadline(float(data.get("seconds_remaining", 0)))
+
+	full_state_applied.emit(data)
 
 func _apply_seat_taken_over(data: Dictionary) -> void:
 	var display_seat := _to_display_seat(int(data["seat_index"]))

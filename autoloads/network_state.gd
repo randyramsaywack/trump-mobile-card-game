@@ -182,6 +182,8 @@ func _handle_server_message(msg: Dictionary) -> void:
 			game_starting.emit()
 		Protocol.MSG_SESSION_START:
 			_begin_multiplayer_session(msg)
+		Protocol.MSG_FULL_STATE:
+			_begin_multiplayer_resume(msg)
 		Protocol.MSG_ROUND_STARTING, \
 		Protocol.MSG_HAND_DEALT, \
 		Protocol.MSG_TRUMP_SELECTION_NEEDED, \
@@ -204,4 +206,16 @@ func _begin_multiplayer_session(msg: Dictionary) -> void:
 	GameState.set_multiplayer_source(view)
 	view.apply_event(msg)
 	# Defer so we don't change scenes inside the message-handling frame.
+	get_tree().change_scene_to_file.call_deferred("res://scenes/game_table.tscn")
+
+## Mid-game rejoin entry point. Mirrors _begin_multiplayer_session but bootstraps
+## from a MSG_FULL_STATE snapshot instead of the SESSION_START burst, then sets
+## NetGameView.is_resuming so game_table_ui skips the dealing animation.
+func _begin_multiplayer_resume(msg: Dictionary) -> void:
+	var data := msg.get("data", {}) as Dictionary
+	var view := NetGameView.new()
+	view._server_local_seat = int(data.get("your_seat", local_seat))
+	view.is_resuming = true
+	GameState.set_multiplayer_source(view)
+	view.apply_event(msg)
 	get_tree().change_scene_to_file.call_deferred("res://scenes/game_table.tscn")

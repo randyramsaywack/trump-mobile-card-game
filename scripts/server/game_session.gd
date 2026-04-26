@@ -182,6 +182,30 @@ func _execute_ai_for_seat(seat: int) -> void:
 func handle_player_disconnect(peer_id: int) -> Array:
 	return _swap_to_ai(peer_id, "disconnect")
 
+## Called by RoomManager when a peer's username matched a vacant seat. Swaps
+## the AIPlayer in that seat back to a real Player (sharing the same hand by
+## reference so the round state is preserved), re-registers peer_to_seat, and
+## defuses any pending AI action queued for that seat — without this, the
+## human's first turn back is stolen by the AI's already-scheduled play.
+func handle_player_rejoin(peer_id: int, seat: int) -> void:
+	if seat < 0 or seat >= players.size():
+		return
+	var old := players[seat] as Player
+	if old != null and not (old is AIPlayer):
+		# Seat is already human-owned — just refresh the mapping defensively.
+		peer_to_seat[peer_id] = seat
+		return
+	var human := Player.new(seat, old.display_name, true)
+	human.hand = old.hand
+	players[seat] = human
+	if round_manager.players.size() > seat:
+		round_manager.players[seat] = human
+	peer_to_seat[peer_id] = seat
+	var active := _active_seat()
+	if active == seat:
+		round_manager._ai_pending = false
+		_arm_turn_timer(seat)
+
 ## Called when a non-host peer sends leave_room while a game is live.
 func handle_player_leave(peer_id: int) -> Array:
 	return _swap_to_ai(peer_id, "left")
@@ -376,6 +400,62 @@ func _swap_to_ai(peer_id: int, reason: String) -> Array:
 	elif rm_state == RoundManager.RoundState.TRUMP_SELECTION and round_manager.trump_selector_seat == seat:
 		round_manager.call("_schedule_ai_action")
 	return drain_events()
+
+## Build the snapshot a rejoining peer needs to bootstrap a NetGameView mid-
+## round. Called by RoomManager after handle_player_rejoin re-registers the
+## peer; the resulting dict is wrapped in MSG_FULL_STATE and sent privately.
+func build_full_state_for(seat: int) -> Dictionary:
+	var seats: Array = []
+	var hand_counts: Array = []
+	for s in 4:
+		var p := players[s]
+		seats.append({
+			"seat": s,
+			"username": seat_display_names[s],
+			"is_ai": p is AIPlayer,
+		})
+		hand_counts.append(int(p.hand.size()) if p != null else 0)
+	var trump_int := -1
+	if round_manager.state != RoundManager.RoundState.IDLE \
+			and round_manager.state != RoundManager.RoundState.DEALING_INITIAL \
+			and round_manager.state != RoundManager.RoundState.TRUMP_SELECTION:
+		trump_int = int(round_manager.trump_suit)
+	var current_trick_cards: Array = []
+	if round_manager.current_trick != null:
+		for entry in round_manager.current_trick.played:
+			current_trick_cards.append({
+				"seat": int(entry["player_index"]),
+				"card": Protocol.card_to_dict(entry["card"] as Card),
+			})
+	var your_hand: Array = []
+	if seat >= 0 and seat < players.size() and players[seat] != null:
+		your_hand = Protocol.cards_to_dicts(players[seat].hand.cards)
+	var current_seat := -1
+	if round_manager.state == RoundManager.RoundState.PLAYER_TURN:
+		current_seat = round_manager.current_player_seat
+	elif round_manager.state == RoundManager.RoundState.TRUMP_SELECTION:
+		current_seat = round_manager.trump_selector_seat
+	var seconds_remaining := 0.0
+	if _turn_deadline_sec > 0.0 and current_seat == seat:
+		seconds_remaining = maxf(0.0, _turn_deadline_sec - _now_sec())
+	return {
+		"seats": seats,
+		"your_seat": seat,
+		"dealer_seat": dealer_seat,
+		"trump_selector_seat": round_manager.trump_selector_seat,
+		"trump_suit": trump_int,
+		"books": round_manager.books.duplicate(),
+		"books_by_seat": round_manager.books_by_seat.duplicate(),
+		"session_wins": session_wins.duplicate(),
+		"current_player_seat": current_seat,
+		"state": int(round_manager.state),
+		"hand_counts": hand_counts,
+		"your_hand": your_hand,
+		"current_trick": current_trick_cards,
+		"between_rounds": between_rounds,
+		"seconds_remaining": seconds_remaining,
+		"round_number": round_number,
+	}
 
 func _serialize_trick_history() -> Array:
 	var out: Array = []

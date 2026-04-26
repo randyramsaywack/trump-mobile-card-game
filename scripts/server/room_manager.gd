@@ -67,6 +67,12 @@ func handle_join_room(peer_id: int, data: Dictionary) -> Array:
 	var room: Room = _rooms.get(code, null)
 	if room == null:
 		return [_err_to(peer_id, Protocol.ERR_ROOM_NOT_FOUND)]
+	# Mid-game rejoin: if there's a vacant seat (peer_id == 0) whose username
+	# matches this peer, reclaim it. Must come before the WAITING and is_full
+	# checks — an in-progress full room would otherwise be rejected.
+	var rejoin_pair := _try_rejoin(peer_id, room)
+	if not rejoin_pair.is_empty():
+		return rejoin_pair
 	if room.state != Room.State.WAITING:
 		return [_err_to(peer_id, Protocol.ERR_ROOM_STARTED)]
 	if room.is_full():
@@ -217,6 +223,41 @@ func _on_non_host_exit(room: Room, peer_id: int, reason: String) -> Array:
 			break
 	if not room.game_session.has_humans():
 		_rooms.erase(room.code)
+	return out
+
+## Mid-game rejoin probe. Returns an outgoing-pair list (same shape as the
+## other handlers) if the peer matches a vacant seat in `room`; empty array
+## means "no match — fall through to normal join flow". Identity is username
+## equality, which is spoofable but matches the no-account guest model.
+func _try_rejoin(peer_id: int, room: Room) -> Array:
+	if room.game_session == null:
+		return []
+	var username := get_username(peer_id)
+	if username == "":
+		return []
+	var matched_seat := -1
+	var matched_index := -1
+	for i in room.players.size():
+		var entry: Dictionary = room.players[i]
+		if int(entry["peer_id"]) == 0 and String(entry["username"]) == username:
+			matched_seat = int(entry["seat"])
+			matched_index = i
+			break
+	if matched_seat < 0:
+		return []
+	# Reassign the seat to this peer.
+	room.players[matched_index]["peer_id"] = peer_id
+	_peer_to_room[peer_id] = room.code
+	room.game_session.handle_player_rejoin(peer_id, matched_seat)
+	# Drain any events handle_player_rejoin queued (e.g. re-armed turn timer)
+	# so they ship in the same flight as the snapshot.
+	var queued := room.game_session.drain_events()
+	var out: Array = []
+	out.append([peer_id, _room_joined_msg(room, room.players[matched_index])])
+	out.append([peer_id, Protocol.msg(Protocol.MSG_FULL_STATE,
+			room.game_session.build_full_state_for(matched_seat))])
+	out.append_array(queued)
+	out.append_array(_broadcast_room_state(room, peer_id))
 	return out
 
 ## Picks the next still-connected human in `room` and transfers the host role.
