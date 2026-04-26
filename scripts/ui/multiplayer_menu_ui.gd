@@ -5,9 +5,10 @@ extends Control
 
 @onready var username_edit: LineEdit = $Center/UsernameEdit
 @onready var rejoin_button: Button = $Center/RejoinButton
+@onready var create_tab_button: Button = $Center/ModeRow/CreateTabButton
+@onready var join_tab_button: Button = $Center/ModeRow/JoinTabButton
 @onready var create_code_edit: LineEdit = $Center/CreateCodeEdit
 @onready var create_button: Button = $Center/CreateButton
-@onready var join_button: Button = $Center/JoinButton
 @onready var join_code_edit: LineEdit = $Center/JoinCodeEdit
 @onready var join_confirm_button: Button = $Center/JoinConfirmButton
 @onready var status_label: Label = $Center/StatusLabel
@@ -16,6 +17,7 @@ extends Control
 ## True between pressing Create/Join and receiving `room_joined`, so we can
 ## route the arriving ROOM_JOINED signal into the correct next-scene.
 var _pending_action: String = ""
+var _mode := "create"
 
 func _ready() -> void:
 	# The multiplayer username is persisted separately from the single-player
@@ -24,8 +26,9 @@ func _ready() -> void:
 	username_edit.text_changed.connect(_on_username_changed)
 	create_code_edit.text_changed.connect(_on_room_code_changed)
 	join_code_edit.text_changed.connect(_on_join_code_changed)
+	create_tab_button.pressed.connect(func(): _set_mode("create"))
+	join_tab_button.pressed.connect(func(): _set_mode("join"))
 	create_button.pressed.connect(_on_create_pressed)
-	join_button.pressed.connect(_on_join_pressed)
 	join_confirm_button.pressed.connect(_on_join_confirm_pressed)
 	rejoin_button.pressed.connect(_on_rejoin_pressed)
 	back_button.pressed.connect(_go_back)
@@ -33,6 +36,7 @@ func _ready() -> void:
 	NetworkState.connection_state_changed.connect(_on_connection_state_changed)
 	NetworkState.room_state_changed.connect(_on_room_state_changed)
 	NetworkState.error_received.connect(_on_error_received)
+	_set_mode("create")
 	_refresh_buttons()
 	_refresh_status()
 
@@ -56,9 +60,9 @@ func _current_username() -> String:
 
 func _refresh_buttons() -> void:
 	var valid := _current_username() != ""
-	create_button.disabled = not valid or (create_code_edit.visible and not _is_valid_room_code(create_code_edit.text))
-	create_button.text = "Create" if create_code_edit.visible else "Create Room"
-	join_button.disabled = not valid
+	create_tab_button.button_pressed = _mode == "create"
+	join_tab_button.button_pressed = _mode == "join"
+	create_button.disabled = not valid or not _is_valid_room_code(create_code_edit.text)
 	join_confirm_button.disabled = not valid or not _is_valid_room_code(join_code_edit.text)
 	rejoin_button.disabled = not valid
 
@@ -78,12 +82,6 @@ func _persist_username() -> void:
 	NetworkState.local_username = Settings.mp_username
 
 func _on_create_pressed() -> void:
-	if not create_code_edit.visible:
-		create_code_edit.visible = true
-		create_code_edit.grab_focus()
-		status_label.text = "Choose a 6-letter room code to share."
-		_refresh_buttons()
-		return
 	var code := _normalize_room_code(create_code_edit.text)
 	if not _is_valid_room_code(code):
 		status_label.text = "Enter a 6-letter room code. Do not use I or O."
@@ -92,13 +90,6 @@ func _on_create_pressed() -> void:
 	_pending_action = "create"
 	_start_connection_then(func(): NetworkState.create_room(code))
 
-func _on_join_pressed() -> void:
-	# Reveal the code input; actual send happens in _on_join_confirm_pressed.
-	join_code_edit.visible = true
-	join_confirm_button.visible = true
-	join_code_edit.grab_focus()
-	_refresh_buttons()
-
 func _on_join_confirm_pressed() -> void:
 	var code := _normalize_room_code(join_code_edit.text)
 	if not _is_valid_room_code(code):
@@ -106,6 +97,20 @@ func _on_join_confirm_pressed() -> void:
 	_persist_username()
 	_pending_action = "join"
 	_start_connection_then(func(): NetworkState.join_room(code))
+
+func _set_mode(mode: String) -> void:
+	_mode = mode
+	var create_mode := _mode == "create"
+	create_code_edit.visible = create_mode
+	create_button.visible = create_mode
+	join_code_edit.visible = not create_mode
+	join_confirm_button.visible = not create_mode
+	status_label.text = "Choose a 6-letter room code to share." if create_mode else "Enter the shared room code."
+	if create_mode:
+		create_code_edit.grab_focus()
+	else:
+		join_code_edit.grab_focus()
+	_refresh_buttons()
 
 func _normalize_room_code(value: String) -> String:
 	return value.strip_edges().to_upper()
@@ -135,9 +140,8 @@ func _on_rejoin_pressed() -> void:
 	var code := Settings.last_room_code
 	if code.length() != Protocol.ROOM_CODE_LENGTH:
 		return
+	_set_mode("join")
 	join_code_edit.text = code
-	join_code_edit.visible = true
-	join_confirm_button.visible = true
 	_persist_username()
 	_pending_action = "join"
 	_start_connection_then(func(): NetworkState.join_room(code))

@@ -2,8 +2,8 @@ class_name AnimationManager
 extends RefCounted
 
 ## Centralized animation primitives for the game table UI.
-## All durations are scaled by Settings.anim_multiplier() so the Slow/Normal/Fast
-## animation-speed setting affects every animation uniformly.
+## All durations are scaled by Settings.anim_multiplier(); animation speed is
+## fixed in Settings rather than exposed as a user-facing setting.
 ## Every function returns a Tween the caller can `await tween.finished` on.
 
 const DEAL_DURATION := 0.3

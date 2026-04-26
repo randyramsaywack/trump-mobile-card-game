@@ -1,6 +1,7 @@
-[gd_scene format=3 uid="uid://roomwaiting"]
+[gd_scene load_steps=3 format=3 uid="uid://roomwaiting"]
 
 [ext_resource type="Script" path="res://scripts/ui/room_waiting_ui.gd" id="1_room_wait"]
+[ext_resource type="Script" path="res://scripts/ui/safe_area_margins.gd" id="2_safe"]
 
 [node name="RoomWaiting" type="Control"]
 script = ExtResource("1_room_wait")
@@ -15,11 +16,13 @@ anchor_bottom = 1.0
 color = Color(0.102, 0.29, 0.18, 1)
 
 [node name="Center" type="VBoxContainer" parent="."]
+script = ExtResource("2_safe")
 anchor_left = 0.08
 anchor_top = 0.1
 anchor_right = 0.92
 anchor_bottom = 0.92
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
+base_gutter = 12.0
 
 [node name="TitleLabel" type="Label" parent="Center"]
 layout_mode = 2
@@ -45,21 +48,25 @@ theme_override_font_sizes/font_size = 14
 layout_mode = 2
 text = "Seat 1: Empty — AI will fill"
 theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
 
 [node name="Seat1" type="Label" parent="Center"]
 layout_mode = 2
 text = "Seat 2: Empty — AI will fill"
 theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
 
 [node name="Seat2" type="Label" parent="Center"]
 layout_mode = 2
 text = "Seat 3: Empty — AI will fill"
 theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
 
 [node name="Seat3" type="Label" parent="Center"]
 layout_mode = 2
 text = "Seat 4: Empty — AI will fill"
 theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
 
 [node name="StartButton" type="Button" parent="Center"]
 layout_mode = 2

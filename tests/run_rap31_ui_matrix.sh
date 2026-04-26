@@ -32,6 +32,12 @@ run_case() {
 
   rm -rf "$dir"
   mkdir -p "$dir/shots"
+  case "$count" in
+    2) printf 'ABFKMR' >"$code_file" ;;
+    3) printf 'CDEGHJ' >"$code_file" ;;
+    4) printf 'KLMNPQ' >"$code_file" ;;
+    *) printf 'RSTUVW' >"$code_file" ;;
+  esac
 
   log "starting ${count}-human case"
   "$GODOT" --headless --path "$ROOT" --server --log-file "$server_log" >"$dir/server.stdout" 2>&1 &

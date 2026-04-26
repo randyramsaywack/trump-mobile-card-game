@@ -1,6 +1,31 @@
-[gd_scene format=3 uid="uid://qdguli7pojcg"]
+[gd_scene load_steps=5 format=3 uid="uid://qdguli7pojcg"]
 
 [ext_resource type="Script" path="res://scripts/ui/multiplayer_menu_ui.gd" id="1_mp_menu"]
+[ext_resource type="Script" path="res://scripts/ui/safe_area_margins.gd" id="2_safe"]
+
+[sub_resource type="StyleBoxFlat" id="SB_segment"]
+bg_color = Color(0.08, 0.19, 0.12, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.788, 0.659, 0.298, 0.55)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="SB_segment_active"]
+bg_color = Color(0.17, 0.34, 0.22, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.82, 0.38, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="MultiplayerMenu" type="Control"]
 script = ExtResource("1_mp_menu")
@@ -15,11 +40,13 @@ anchor_bottom = 1.0
 color = Color(0.102, 0.29, 0.18, 1)
 
 [node name="Center" type="VBoxContainer" parent="."]
+script = ExtResource("2_safe")
 anchor_left = 0.1
 anchor_top = 0.12
 anchor_right = 0.9
 anchor_bottom = 0.92
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
+base_gutter = 12.0
 
 [node name="TitleLabel" type="Label" parent="Center"]
 layout_mode = 2
@@ -27,6 +54,35 @@ text = "Multiplayer"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 32
 theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
+
+[node name="ModeRow" type="HBoxContainer" parent="Center"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CreateTabButton" type="Button" parent="Center/ModeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 44)
+toggle_mode = true
+button_pressed = true
+text = "Create"
+theme_override_colors/font_color = Color(0.95, 0.82, 0.38, 1)
+theme_override_styles/normal = SubResource("SB_segment")
+theme_override_styles/hover = SubResource("SB_segment_active")
+theme_override_styles/pressed = SubResource("SB_segment_active")
+theme_override_styles/focus = SubResource("SB_segment_active")
+
+[node name="JoinTabButton" type="Button" parent="Center/ModeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 44)
+toggle_mode = true
+text = "Join"
+theme_override_colors/font_color = Color(0.95, 0.82, 0.38, 1)
+theme_override_styles/normal = SubResource("SB_segment")
+theme_override_styles/hover = SubResource("SB_segment_active")
+theme_override_styles/pressed = SubResource("SB_segment_active")
+theme_override_styles/focus = SubResource("SB_segment_active")
 
 [node name="UsernameLabel" type="Label" parent="Center"]
 layout_mode = 2
@@ -48,7 +104,6 @@ text = "Rejoin Last Room"
 theme_override_font_sizes/font_size = 14
 
 [node name="CreateCodeEdit" type="LineEdit" parent="Center"]
-visible = false
 layout_mode = 2
 custom_minimum_size = Vector2(0, 44)
 max_length = 6
@@ -58,12 +113,6 @@ placeholder_text = "Create code (6 letters)"
 layout_mode = 2
 custom_minimum_size = Vector2(0, 54)
 text = "Create Room"
-theme_override_font_sizes/font_size = 16
-
-[node name="JoinButton" type="Button" parent="Center"]
-layout_mode = 2
-custom_minimum_size = Vector2(0, 54)
-text = "Join Room"
 theme_override_font_sizes/font_size = 16
 
 [node name="JoinCodeEdit" type="LineEdit" parent="Center"]
@@ -76,8 +125,8 @@ placeholder_text = "Room code (6 chars)"
 [node name="JoinConfirmButton" type="Button" parent="Center"]
 visible = false
 layout_mode = 2
-custom_minimum_size = Vector2(0, 44)
-text = "Join"
+custom_minimum_size = Vector2(0, 54)
+text = "Join Room"
 theme_override_font_sizes/font_size = 16
 
 [node name="StatusLabel" type="Label" parent="Center"]

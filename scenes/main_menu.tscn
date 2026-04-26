@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://mainmenu"]
+[gd_scene load_steps=6 format=3 uid="uid://mainmenu"]
 
 [ext_resource type="Script" path="res://scripts/ui/main_menu_ui.gd" id="1_mainmenu"]
+[ext_resource type="Script" path="res://scripts/ui/safe_area_margins.gd" id="2_safe"]
 
 [sub_resource type="StyleBoxFlat" id="SB_btn_normal"]
 bg_color = Color(0.08, 0.19, 0.12, 1)
@@ -45,11 +46,13 @@ anchor_bottom = 1.0
 color = Color(0.102, 0.29, 0.18, 1)
 
 [node name="CenterLayout" type="VBoxContainer" parent="."]
+script = ExtResource("2_safe")
 anchor_left = 0.1
 anchor_top = 0.12
 anchor_right = 0.9
 anchor_bottom = 0.92
-theme_override_constants/separation = 18
+theme_override_constants/separation = 14
+base_gutter = 12.0
 
 [node name="TitleLabel" type="Label" parent="CenterLayout"]
 layout_mode = 2
@@ -118,7 +121,7 @@ theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 0.6)
 [node name="SinglePlayerBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(200, 60)
+custom_minimum_size = Vector2(220, 54)
 text = "Single Player"
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
@@ -131,7 +134,7 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 [node name="MultiplayerBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(200, 60)
+custom_minimum_size = Vector2(220, 54)
 text = "Multiplayer"
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
@@ -145,7 +148,7 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 [node name="OptionsBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(200, 60)
+custom_minimum_size = Vector2(220, 48)
 text = "Options"
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
@@ -158,7 +161,7 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 [node name="StatsBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(200, 60)
+custom_minimum_size = Vector2(220, 48)
 text = "Stats"
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
@@ -171,7 +174,7 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 [node name="HowToPlayBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(200, 60)
+custom_minimum_size = Vector2(220, 48)
 text = "How to Play"
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
@@ -184,7 +187,7 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 [node name="CreditsBtn" type="Button" parent="CenterLayout"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(200, 60)
+custom_minimum_size = Vector2(220, 48)
 text = "Credits"
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)

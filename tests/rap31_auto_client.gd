@@ -177,6 +177,11 @@ func _capture_shot() -> void:
 		push_warning("[rap31-auto:%s] failed screenshot err=%d" % [_username, err])
 
 func _on_error_received(code: String, message: String) -> void:
+	if code == Protocol.ERR_NOT_YOUR_TURN:
+		_action_pending = false
+		_last_action_key = ""
+		push_warning("[rap31-auto:%s] ignored stale action race: %s" % [_username, message])
+		return
 	_finish(false, "network error %s: %s" % [code, message])
 
 func _finish(ok: bool, message: String) -> void:
