@@ -50,6 +50,11 @@ const CARD_SEP_RATIO := 0.62              # -separation as fraction of card widt
 const SMALL_CARD_RATIO := 0.5             # opponents' cards: half-size
 const SMALL_H_SEP_RATIO := 0.54           # top-hand horizontal separation
 const SMALL_V_SEP_RATIO := 0.88           # side-hand vertical separation
+## Padding between every screen-edge-anchored UI element (hands, avatars, HUD,
+## trick area) and the corresponding viewport edge. Cards are sized against
+## viewport width minus 2× this gutter so the bottom hand never crowds the
+## sides. Stack in addition to safe-area insets, not in place of them.
+const EDGE_GUTTER := 8.0
 
 var _card_size: Vector2 = Vector2(52, 78)
 var _small_card_size: Vector2 = Vector2(26, 39)
@@ -88,7 +93,13 @@ var _new_trick_pending: bool = true
 # not parented to a slot). Used by trick-collection animation.
 var _trick_cards_by_seat: Dictionary = {}
 
+## Dev: when launched with `-- --shot-show-timer`, force the MP turn timer
+## label visible for layout screenshots. Cached so _process doesn't pay for
+## a cmdline scan every frame.
+var _shot_force_timer_visible: bool = false
+
 func _ready() -> void:
+	_shot_force_timer_visible = "--shot-show-timer" in OS.get_cmdline_user_args()
 	# Safety net: ensure suit glyphs render even if the default font lacks them.
 	# iOS's default font doesn't ship U+2699 (⚙) or U+2261 (≡), so the HUD
 	# buttons need the symbol-font fallback too.
@@ -137,6 +148,10 @@ func _exit_tree() -> void:
 ## pressure a solo human). NetGameView publishes a local-clock deadline; we
 ## just compute remaining and update the label every frame.
 func _process(_delta: float) -> void:
+	if _shot_force_timer_visible:
+		timer_label.text = "45s"
+		timer_label.visible = true
+		return
 	if not GameState.multiplayer_mode:
 		if timer_label.visible:
 			timer_label.visible = false
@@ -281,8 +296,11 @@ func _apply_card_sizing() -> void:
 		safe_bottom = maxf(0.0, float(win_size.y - (safe.position.y + safe.size.y)) * sy)
 		safe_left = maxf(0.0, float(safe.position.x) * sx)
 		safe_right = maxf(0.0, float(win_size.x - (safe.position.x + safe.size.x)) * sx)
-	var eff_w: float = maxf(1.0, vp_w - safe_left - safe_right)
-	var eff_h: float = maxf(1.0, vp_rect.size.y - safe_top - safe_bottom)
+	# Subtract the gutter from both dimensions so the cards are sized against
+	# the actual playable region. Without this, cards span the safe-area-only
+	# width and the leftmost/rightmost ones land flush against the viewport edge.
+	var eff_w: float = maxf(1.0, vp_w - safe_left - safe_right - 2.0 * EDGE_GUTTER)
+	var eff_h: float = maxf(1.0, vp_rect.size.y - safe_top - safe_bottom - 2.0 * EDGE_GUTTER)
 	var w_cap: float = minf(eff_h * CARD_HEIGHT_CAP_RATIO, CARD_MAX_WIDTH)
 	var w: float = roundf(clampf(eff_w * CARD_WIDTH_RATIO, CARD_MIN_WIDTH, w_cap))
 	var h: float = roundf(w * CARD_ASPECT)
@@ -311,10 +329,12 @@ func _apply_card_sizing() -> void:
 	# HUD shifts down by safe_top to clear any notch. NorthName and TopHand
 	# follow.
 	var hud: Control = $HUD as Control
-	hud.offset_left = 6.0 + safe_left
-	hud.offset_right = -6.0 - safe_right
-	# HUD height: row1 uses 44px touch-target buttons + row2 of small text (~16px).
-	var hud_height: float = 60.0
+	hud.offset_left = EDGE_GUTTER + safe_left
+	hud.offset_right = -EDGE_GUTTER - safe_right
+	# HUD height: row1 uses 44px touch-target buttons, row2 ~16px small labels,
+	# row3 ~22px for the MP turn timer, plus 10px breathing room before the
+	# partner avatar. The previous 60px allocation clipped row3 entirely.
+	var hud_height: float = 92.0
 	hud.offset_top = safe_top
 	hud.offset_bottom = safe_top + hud_height
 	# Gap between avatars and adjacent card rows.
@@ -330,6 +350,10 @@ func _apply_card_sizing() -> void:
 	top_hand_node.offset_top = top_hand_top
 	var top_hand_bottom: float = top_hand_top + sh + 4.0
 	top_hand_node.offset_bottom = top_hand_bottom
+	# Match the bottom hand's horizontal gutter so the centered partner row
+	# can never overflow the playable region either.
+	top_hand_node.offset_left = safe_left + EDGE_GUTTER
+	top_hand_node.offset_right = -safe_right - EDGE_GUTTER
 	mid_row.offset_top = top_hand_bottom
 	# Bottom area: SouthAvatar sits above BottomHand so the trick count
 	# is always visible and never covered by cards.
@@ -340,28 +364,35 @@ func _apply_card_sizing() -> void:
 	var side_avatar_w: float = 48.0
 	west_avatar.anchor_left = 0.0
 	west_avatar.anchor_right = 0.0
-	west_avatar.offset_left = safe_left
-	west_avatar.offset_right = safe_left + side_avatar_w
+	west_avatar.offset_left = safe_left + EDGE_GUTTER
+	west_avatar.offset_right = safe_left + EDGE_GUTTER + side_avatar_w
 	east_avatar.anchor_left = 1.0
 	east_avatar.anchor_right = 1.0
-	east_avatar.offset_left = -safe_right - side_avatar_w
-	east_avatar.offset_right = -safe_right
+	east_avatar.offset_left = -safe_right - EDGE_GUTTER - side_avatar_w
+	east_avatar.offset_right = -safe_right - EDGE_GUTTER
 	# Hide until _reposition_side_avatars() places them at the correct height.
 	west_avatar.visible = false
 	east_avatar.visible = false
-	bottom_hand.offset_top = -bottom_hand_height - safe_bottom
-	bottom_hand.offset_bottom = -safe_bottom
-	# South avatar: positioned above the bottom hand.
-	var south_avatar_top: float = bottom_hand_height + name_gap + safe_bottom
+	# Bottom hand: lift off the screen edge by EDGE_GUTTER and pad sides so
+	# the leftmost / rightmost cards never reach the viewport border.
+	bottom_hand.offset_top = -bottom_hand_height - safe_bottom - EDGE_GUTTER
+	bottom_hand.offset_bottom = -safe_bottom - EDGE_GUTTER
+	bottom_hand.offset_left = safe_left + EDGE_GUTTER
+	bottom_hand.offset_right = -safe_right - EDGE_GUTTER
+	# South avatar: positioned above the bottom hand. south_avatar_top is the
+	# distance from the viewport bottom to the avatar's bottom edge — the same
+	# offset chain bottom_hand uses, plus name_gap clearance.
+	var south_avatar_top: float = bottom_hand_height + name_gap + safe_bottom + EDGE_GUTTER
 	south_avatar.offset_left = -24.0
 	south_avatar.offset_right = 24.0
 	south_avatar.offset_top = -(south_avatar_top + avatar_h)
 	south_avatar.offset_bottom = -south_avatar_top
 	mid_row.offset_bottom = -(south_avatar_top + avatar_h + name_gap)
 	# Respect horizontal safe insets on MidRow so side hands clear any
-	# landscape-notch cutouts (no-op in portrait).
-	mid_row.offset_left = safe_left
-	mid_row.offset_right = -safe_right
+	# landscape-notch cutouts, and add EDGE_GUTTER so face-down stacks at the
+	# left/right ends of MidRow can never sit flush against the viewport.
+	mid_row.offset_left = safe_left + EDGE_GUTTER
+	mid_row.offset_right = -safe_right - EDGE_GUTTER
 	# Toast sits just above the south avatar.
 	toast_label.offset_top = -(south_avatar_top + avatar_h + 20.0)
 	toast_label.offset_bottom = -(south_avatar_top + avatar_h)

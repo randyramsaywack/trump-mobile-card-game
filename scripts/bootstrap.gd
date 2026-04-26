@@ -9,6 +9,14 @@ extends Node
 ##   3. Desktop fallback → race for the ENet port (first F5 = server)
 
 func _ready() -> void:
+	# Dev-only: jump straight into a SP game_table session for screenshot
+	# captures. Skips the server-port race so the local instance can't
+	# accidentally take over the cloud server's role during a layout check.
+	if "--shot-game-table" in OS.get_cmdline_user_args():
+		print("[bootstrap] --shot-game-table — direct to game_table")
+		get_tree().change_scene_to_file.call_deferred("res://scenes/game_table.tscn")
+		return
+
 	# Explicit dedicated server mode (headless export or --server flag)
 	if OS.has_feature("dedicated_server") or "--server" in OS.get_cmdline_args():
 		_start_server()

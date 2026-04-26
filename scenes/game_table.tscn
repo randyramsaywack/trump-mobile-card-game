@@ -45,7 +45,6 @@ grow_vertical = 1
 
 [node name="HUDRow1" type="HBoxContainer" parent="HUD"]
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="TrumpLabel" type="Label" parent="HUD/HUDRow1"]
 layout_mode = 2
@@ -81,7 +80,6 @@ theme_override_font_sizes/font_size = 18
 
 [node name="HUDRow2" type="HBoxContainer" parent="HUD"]
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="SessionLabel" type="Label" parent="HUD/HUDRow2"]
 layout_mode = 2
@@ -104,14 +102,13 @@ theme_override_font_sizes/font_size = 11
 
 [node name="HUDRow3" type="HBoxContainer" parent="HUD"]
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="TimerLabel" type="Label" parent="HUD/HUDRow3"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = ""
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 visible = false
 
 [node name="NorthAvatar" parent="." instance=ExtResource("2_avatar")]

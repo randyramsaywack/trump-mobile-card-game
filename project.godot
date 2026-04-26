@@ -25,6 +25,7 @@ Settings="*res://autoloads/settings.gd"
 SuitFont="*res://autoloads/suit_font.gd"
 StatsManager="*res://autoloads/stats_manager.gd"
 Bootstrap="*res://scripts/bootstrap.gd"
+ScreenshotHelper="*res://autoloads/screenshot_helper.gd"
 
 [display]
 
