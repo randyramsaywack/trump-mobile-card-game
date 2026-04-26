@@ -9,6 +9,21 @@ extends Node
 ##   3. Desktop fallback → race for the ENet port (first F5 = server)
 
 func _ready() -> void:
+	# Dev-only: launch an automated multiplayer client controller that uses
+	# the real NetworkState transport and survives scene changes.
+	if "--rap31-auto-client" in OS.get_cmdline_user_args():
+		var runner_script := load("res://tests/rap31_auto_client.gd")
+		var runner: Node = runner_script.new()
+		get_tree().root.add_child.call_deferred(runner)
+		return
+
+	# Dev-only: run the RAP-31 authoritative multiplayer smoke inside the
+	# normal project/autoload environment.
+	if "--rap31-smoke" in OS.get_cmdline_user_args():
+		print("[bootstrap] --rap31-smoke — running multiplayer smoke")
+		get_tree().change_scene_to_file.call_deferred("res://tests/rap31_multiplayer_smoke.tscn")
+		return
+
 	# Dev-only: jump straight into a SP game_table session for screenshot
 	# captures. Skips the server-port race so the local instance can't
 	# accidentally take over the cloud server's role during a layout check.

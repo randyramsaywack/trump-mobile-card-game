@@ -396,6 +396,8 @@ func _apply_card_sizing() -> void:
 	# Toast sits just above the south avatar.
 	toast_label.offset_top = -(south_avatar_top + avatar_h + 20.0)
 	toast_label.offset_bottom = -(south_avatar_top + avatar_h)
+	if top_hand.get_child_count() > 0 or left_hand.get_child_count() > 0 or right_hand.get_child_count() > 0:
+		call_deferred("_reposition_side_avatars")
 
 func _apply_trick_slot_layout() -> void:
 	var w: float = _card_size.x
