@@ -1,18 +1,37 @@
-[gd_scene load_steps=4 format=3 uid="uid://winscreen"]
+[gd_scene load_steps=5 format=3 uid="uid://winscreen"]
 
 [ext_resource type="Script" path="res://scripts/ui/win_screen_ui.gd" id="1_winscreen"]
 
-[sub_resource type="StyleBoxFlat" id="SB_btn_normal"]
-bg_color = Color(0.08, 0.19, 0.12, 1)
+[sub_resource type="StyleBoxFlat" id="SB_result_sheet"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.06, 0.17, 0.105, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.788, 0.659, 0.298, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="SB_btn_normal"]
+bg_color = Color(0.075, 0.18, 0.115, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.788, 0.659, 0.298, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="SB_btn_hover"]
 bg_color = Color(0.13, 0.3, 0.19, 1)
@@ -21,10 +40,10 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(1, 0.82, 0.38, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="WinScreen" type="Control"]
 script = ExtResource("1_winscreen")
@@ -38,25 +57,34 @@ z_index = 200
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.7)
+color = Color(0, 0, 0, 0.74)
+
+[node name="ResultSheet" type="PanelContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.06
+anchor_top = 0.22
+anchor_right = 0.94
+anchor_bottom = 0.88
+mouse_filter = 2
+theme_override_styles/panel = SubResource("SB_result_sheet")
 
 [node name="ResultLabel" type="Label" parent="."]
 anchors_preset = -1
 anchor_left = 0.1
-anchor_top = 0.28
+anchor_top = 0.29
 anchor_right = 0.9
-anchor_bottom = 0.44
+anchor_bottom = 0.42
 text = "Result"
 horizontal_alignment = 1
 vertical_alignment = 1
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 34
 
 [node name="SessionLabel" type="Label" parent="."]
 anchors_preset = -1
 anchor_left = 0.15
-anchor_top = 0.48
+anchor_top = 0.47
 anchor_right = 0.85
-anchor_bottom = 0.6
+anchor_bottom = 0.56
 text = "Session — You: 0 | Opponents: 0"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -66,7 +94,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 0.92)
 [node name="HistoryBtn" type="Button" parent="."]
 anchors_preset = -1
 anchor_left = 0.15
-anchor_top = 0.62
+anchor_top = 0.61
 anchor_right = 0.85
 anchor_bottom = 0.69
 text = "View Trick History"
@@ -81,17 +109,17 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 [node name="Buttons" type="HBoxContainer" parent="."]
 anchors_preset = -1
 anchor_left = 0.1
-anchor_top = 0.73
+anchor_top = 0.74
 anchor_right = 0.9
-anchor_bottom = 0.85
+anchor_bottom = 0.84
 alignment = 1
-theme_override_constants/separation = 16
+theme_override_constants/separation = 10
 
 [node name="NextRoundBtn" type="Button" parent="Buttons"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Next Round"
-custom_minimum_size = Vector2(140, 56)
+custom_minimum_size = Vector2(132, 54)
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
 theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
@@ -104,7 +132,7 @@ theme_override_styles/focus = SubResource("SB_btn_hover")
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Main Menu"
-custom_minimum_size = Vector2(140, 56)
+custom_minimum_size = Vector2(132, 54)
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
 theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)

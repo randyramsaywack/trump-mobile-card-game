@@ -15,6 +15,8 @@ const COLOR_SUIT_BLACK := Color(0.85, 0.85, 0.85)
 const COLOR_GOLD := Color(0.95, 0.82, 0.38)
 const COLOR_WIN_BG := Color(0.95, 0.82, 0.18, 0.28)
 const COLOR_WIN_BORDER := Color(1.0, 0.9, 0.22)
+const COLOR_ROW_BG := Color(0.04, 0.11, 0.075, 0.42)
+const COLOR_ROW_BORDER := Color(1.0, 1.0, 1.0, 0.08)
 const COLOR_TEXT_DIM := Color(0.75, 0.75, 0.75)
 const COLOR_TEXT := Color(0.92, 0.92, 0.92)
 
@@ -23,6 +25,7 @@ const POSITION_ORDER: Array[String] = ["bottom", "top", "left", "right"]
 
 func _ready() -> void:
 	close_button.pressed.connect(_on_close_pressed)
+	SuitFont.apply(close_button)
 
 ## Refresh the list from the provided trick_history array and show the overlay.
 ## `history` is the array owned by RoundManager — callers pass it directly.
@@ -46,8 +49,23 @@ func _clear_list() -> void:
 		child.queue_free()
 
 func _build_trick_row(entry: Dictionary) -> Control:
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = COLOR_ROW_BG
+	panel_style.border_color = COLOR_ROW_BORDER
+	panel_style.set_border_width_all(1)
+	panel_style.set_corner_radius_all(8)
+	panel_style.content_margin_left = 8
+	panel_style.content_margin_right = 8
+	panel_style.content_margin_top = 6
+	panel_style.content_margin_bottom = 6
+	panel.add_theme_stylebox_override("panel", panel_style)
+
 	var row := VBoxContainer.new()
 	row.add_theme_constant_override("separation", 4)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.add_child(row)
 
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 8)
@@ -81,10 +99,7 @@ func _build_trick_row(entry: Dictionary) -> Control:
 		cards_row.add_child(_build_card_chip(cd, winning_card))
 	row.add_child(cards_row)
 
-	var sep := HSeparator.new()
-	sep.add_theme_constant_override("separation", 6)
-	row.add_child(sep)
-	return row
+	return panel
 
 func _build_card_chip(card_entry: Dictionary, winning_card: Card) -> Control:
 	var panel := PanelContainer.new()
@@ -110,7 +125,7 @@ func _build_card_chip(card_entry: Dictionary, winning_card: Card) -> Control:
 		style.bg_color = COLOR_WIN_BG
 		style.border_color = COLOR_WIN_BORDER
 		style.set_border_width_all(2)
-		style.set_corner_radius_all(6)
+		style.set_corner_radius_all(8)
 		style.content_margin_left = 4
 		style.content_margin_right = 4
 		style.content_margin_top = 2

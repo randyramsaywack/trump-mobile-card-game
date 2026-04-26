@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://history_overlay"]
+[gd_scene load_steps=5 format=3 uid="uid://history_overlay"]
 
 [ext_resource type="Script" path="res://scripts/ui/history_overlay.gd" id="1_history"]
 
@@ -13,13 +13,37 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.788, 0.659, 0.298, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 shadow_color = Color(0, 0, 0, 0.5)
 shadow_size = 6
 shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="SB_icon_btn"]
+bg_color = Color(0.075, 0.18, 0.115, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.788, 0.659, 0.298, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="SB_icon_btn_hover"]
+bg_color = Color(0.13, 0.3, 0.19, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.82, 0.38, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="HistoryOverlay" type="Control"]
 script = ExtResource("1_history")
@@ -33,7 +57,7 @@ z_index = 250
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.55)
+color = Color(0, 0, 0, 0.64)
 
 [node name="Panel" type="PanelContainer" parent="."]
 anchor_left = 0.5
@@ -52,6 +76,7 @@ theme_override_constants/separation = 8
 
 [node name="Header" type="HBoxContainer" parent="Panel/VBox"]
 layout_mode = 2
+theme_override_constants/separation = 8
 
 [node name="Title" type="Label" parent="Panel/VBox/Header"]
 layout_mode = 2
@@ -62,10 +87,15 @@ theme_override_font_sizes/font_size = 18
 
 [node name="CloseButton" type="Button" parent="Panel/VBox/Header"]
 layout_mode = 2
-custom_minimum_size = Vector2(32, 32)
+custom_minimum_size = Vector2(36, 36)
 text = "X"
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
 theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("SB_icon_btn")
+theme_override_styles/hover = SubResource("SB_icon_btn_hover")
+theme_override_styles/pressed = SubResource("SB_icon_btn_hover")
+theme_override_styles/focus = SubResource("SB_icon_btn_hover")
 
 [node name="EmptyLabel" type="Label" parent="Panel/VBox"]
 layout_mode = 2

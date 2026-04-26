@@ -11,8 +11,12 @@ extends Control
 
 const CardScene := preload("res://scenes/card.tscn")
 const SLIDE_OFFSET := 30.0
+const CARD_GAP := 8.0
+const SUIT_BUTTON_GAP := 6.0
 
 var _anim_tween: Tween = null
+var _selector_card_size: Vector2 = Vector2(60, 90)
+var _selector_button_size: Vector2 = Vector2(64, 54)
 
 func _ready() -> void:
 	# Safety net: ensure suit glyphs render on all platforms.
@@ -24,6 +28,21 @@ func _ready() -> void:
 	hearts_btn.pressed.connect(func(): _choose(Card.Suit.HEARTS))
 	diamonds_btn.pressed.connect(func(): _choose(Card.Suit.DIAMONDS))
 	clubs_btn.pressed.connect(func(): _choose(Card.Suit.CLUBS))
+	_apply_layout_sizing()
+	get_viewport().size_changed.connect(_apply_layout_sizing)
+
+func _apply_layout_sizing() -> void:
+	var vp_w: float = get_viewport_rect().size.x
+	var content_w: float = maxf(1.0, vp_w * 0.9)
+	var card_w := floorf(clampf((content_w - (4.0 * CARD_GAP)) / 5.0, 46.0, 60.0))
+	_selector_card_size = Vector2(card_w, roundf(card_w * 1.5))
+	var button_w := floorf(clampf((content_w - (3.0 * SUIT_BUTTON_GAP)) / 4.0, 62.0, 76.0))
+	_selector_button_size = Vector2(button_w, 54.0)
+	for button in [spades_btn, hearts_btn, diamonds_btn, clubs_btn]:
+		button.custom_minimum_size = _selector_button_size
+		button.add_theme_font_size_override("font_size", 12 if button_w < 70.0 else 14)
+	for child in cards_container.get_children():
+		(child as Control).custom_minimum_size = _selector_card_size
 
 func show_for_human(initial_cards: Array) -> void:
 	prompt_label.text = "Choose Trump Suit"
@@ -80,7 +99,7 @@ func _populate_cards(cards: Array) -> void:
 		card_node.call("setup", card, true)
 		# Display only — block interaction without dimming via set_valid.
 		card_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card_node.custom_minimum_size = Vector2(60, 90)
+		card_node.custom_minimum_size = _selector_card_size
 		card_node.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		card_node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		cards_container.add_child(card_node)

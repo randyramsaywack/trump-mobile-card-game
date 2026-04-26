@@ -746,7 +746,7 @@ func _do_apply_turn(seat: int, valid_cards: Array) -> void:
 	_current_valid_cards.clear()
 	for c in valid_cards:
 		_current_valid_cards.append(c as Card)
-	turn_label.text = "Your turn" if seat == 0 else GameState.get_player(seat).display_name + "'s turn"
+	turn_label.text = _turn_text_for_seat(seat)
 	if seat == 0:
 		GameState.vibrate(50)
 		_highlight_valid_cards()
@@ -754,6 +754,15 @@ func _do_apply_turn(seat: int, valid_cards: Array) -> void:
 		var human := GameState.get_player(0)
 		if human != null and human.hand != null and human.hand.size() == 1:
 			_auto_play_last_card(human.hand.cards[0])
+
+func _turn_text_for_seat(seat: int) -> String:
+	if seat == 0:
+		return "Your turn"
+	var active_player := GameState.get_player(seat)
+	var active_name := active_player.display_name if active_player != null else ""
+	if active_name.strip_edges() == "":
+		active_name = "Player %d" % (seat + 1)
+	return active_name + "'s turn"
 
 func _auto_play_last_card(card: Card) -> void:
 	var gen := _round_gen
@@ -1005,7 +1014,7 @@ func _clear_table() -> void:
 	_current_valid_cards.clear()
 	trump_label.text = "Trump: —"
 	books_label.text = "Books: 0–0"
-	turn_label.text = "—'s turn"
+	turn_label.text = "Waiting"
 	_clear_avatar_tricks()
 
 ## Mid-game rejoin entry point. NetGameView already populated `players`,
@@ -1070,7 +1079,7 @@ func _on_full_state_applied(snapshot: Dictionary) -> void:
 		if seat == 0 and net.players.size() > 0 and net.players[0] != null:
 			hand = net.players[0].hand.cards.duplicate()
 		_do_show_trump_selection(seat, hand)
-		turn_label.text = "Your turn" if seat == 0 else GameState.get_player(seat).display_name + "'s turn"
+		turn_label.text = _turn_text_for_seat(seat)
 		_set_all_avatars_inactive()
 		var sel_avatar = _get_avatar(seat)
 		if sel_avatar:
@@ -1084,7 +1093,7 @@ func _on_full_state_applied(snapshot: Dictionary) -> void:
 					net.trump_suit)
 		_do_apply_turn(seat2, valid)
 	else:
-		turn_label.text = "—'s turn"
+		turn_label.text = "Waiting"
 
 	call_deferred("_reposition_side_avatars")
 	# Resume done — clear the flag so future MSG_ROUND_STARTING (next round

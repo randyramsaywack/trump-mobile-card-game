@@ -1,7 +1,39 @@
-[gd_scene load_steps=3 format=3 uid="uid://gametable"]
+[gd_scene load_steps=5 format=3 uid="uid://gametable"]
 
 [ext_resource type="Script" path="res://scripts/ui/game_table_ui.gd" id="1_gametable"]
 [ext_resource type="PackedScene" uid="uid://avatar_scene" path="res://scenes/ui/avatar.tscn" id="2_avatar"]
+
+[sub_resource type="StyleBoxFlat" id="SB_hud_button"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.075, 0.18, 0.115, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.788, 0.659, 0.298, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="SB_hud_button_hover"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.13, 0.3, 0.19, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.82, 0.38, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="GameTable" type="Control"]
 script = ExtResource("1_gametable")
@@ -42,9 +74,11 @@ offset_left = 6.0
 offset_right = -6.0
 offset_bottom = 48.0
 grow_vertical = 1
+theme_override_constants/separation = 2
 
 [node name="HUDRow1" type="HBoxContainer" parent="HUD"]
 layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="TrumpLabel" type="Label" parent="HUD/HUDRow1"]
 layout_mode = 2
@@ -54,7 +88,7 @@ text = "Trump: —"
 clip_text = true
 text_overrun_behavior = 3
 theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 
 [node name="BooksLabel" type="Label" parent="HUD/HUDRow1"]
 layout_mode = 2
@@ -64,22 +98,35 @@ horizontal_alignment = 2
 clip_text = true
 text_overrun_behavior = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 
 [node name="HistoryButton" type="Button" parent="HUD/HUDRow1"]
 layout_mode = 2
 custom_minimum_size = Vector2(44, 44)
 text = "≡"
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("SB_hud_button")
+theme_override_styles/hover = SubResource("SB_hud_button_hover")
+theme_override_styles/pressed = SubResource("SB_hud_button_hover")
+theme_override_styles/focus = SubResource("SB_hud_button_hover")
 
 [node name="SettingsButton" type="Button" parent="HUD/HUDRow1"]
 layout_mode = 2
 custom_minimum_size = Vector2(44, 44)
 text = "⚙"
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("SB_hud_button")
+theme_override_styles/hover = SubResource("SB_hud_button_hover")
+theme_override_styles/pressed = SubResource("SB_hud_button_hover")
+theme_override_styles/focus = SubResource("SB_hud_button_hover")
 
 [node name="HUDRow2" type="HBoxContainer" parent="HUD"]
 layout_mode = 2
+theme_override_constants/separation = 8
 
 [node name="SessionLabel" type="Label" parent="HUD/HUDRow2"]
 layout_mode = 2
@@ -93,7 +140,7 @@ theme_override_font_sizes/font_size = 11
 [node name="TurnLabel" type="Label" parent="HUD/HUDRow2"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "—'s turn"
+text = "Waiting"
 horizontal_alignment = 2
 clip_text = true
 text_overrun_behavior = 3
@@ -108,6 +155,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = ""
 horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.788, 0.659, 0.298, 1)
 theme_override_font_sizes/font_size = 16
 visible = false
 
