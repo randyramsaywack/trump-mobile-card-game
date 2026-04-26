@@ -1099,7 +1099,7 @@ func _on_full_state_applied(snapshot: Dictionary) -> void:
 	else:
 		turn_label.text = "Waiting"
 
-	call_deferred("_reposition_side_avatars")
+	_settle_resume_layout.call_deferred()
 	# Resume done — clear the flag so future MSG_ROUND_STARTING (next round
 	# after host taps Next Round) goes through the normal animated path.
 	net.is_resuming = false
@@ -1126,6 +1126,7 @@ func _snap_build_all_hands(net: NetGameView) -> void:
 				node.connect("card_play_requested", _on_card_play_requested)
 			container.add_child(node)
 	_resort_human_hand()
+	_apply_card_sizing()
 
 ## Drop a face-up card at each occupied trick slot. Uses the slot's global
 ## position so the card lands in the same spot a normal play animation would
@@ -1143,11 +1144,29 @@ func _snap_build_current_trick(net: NetGameView) -> void:
 		node.size = _card_size
 		add_child(node)
 		node.z_index = 50
-		# One frame would normally let the slot resolve its global position,
-		# but on resume the slot is already laid out from _ready; positioning
-		# here is good enough for the snap.
-		node.position = slot.global_position - global_position
 		_trick_cards_by_seat[seat] = node
+		_place_snapped_trick_card(seat, node)
+
+func _settle_resume_layout() -> void:
+	await get_tree().process_frame
+	_apply_card_sizing()
+	await get_tree().process_frame
+	_reposition_snapped_trick_cards()
+	_reposition_side_avatars()
+
+func _reposition_snapped_trick_cards() -> void:
+	for seat in _trick_cards_by_seat.keys():
+		var node := _trick_cards_by_seat[seat] as Control
+		if is_instance_valid(node):
+			_place_snapped_trick_card(int(seat), node)
+
+func _place_snapped_trick_card(seat: int, node: Control) -> void:
+	var slot := _get_trick_slot(seat)
+	if slot == null:
+		return
+	node.custom_minimum_size = _card_size
+	node.size = _card_size
+	node.position = slot.global_position - global_position
 
 func _on_round_started(_dealer_seat: int, _trump_selector_seat: int) -> void:
 	_round_gen += 1
