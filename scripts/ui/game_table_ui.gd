@@ -50,6 +50,8 @@ const CARD_SEP_RATIO := 0.62              # -separation as fraction of card widt
 const SMALL_CARD_RATIO := 0.5             # opponents' cards: half-size
 const SMALL_H_SEP_RATIO := 0.54           # top-hand horizontal separation
 const SMALL_V_SEP_RATIO := 0.88           # side-hand vertical separation
+const AVATAR_W := 84.0
+const AVATAR_H := 68.0
 ## Padding between every screen-edge-anchored UI element (hands, avatars, HUD,
 ## trick area) and the corresponding viewport edge. Cards are sized against
 ## viewport width minus 2× this gutter so the bottom hand never crowds the
@@ -184,20 +186,24 @@ func _refresh_south_name() -> void:
 ## has laid out its children.
 func _reposition_side_avatars() -> void:
 	var avatar_gap: float = 10.0
-	var avatar_h: float = 66.0  # 48 circle + 2 spacing + ~14 label
+	var safe := _safe_area_offsets()
+	var top_limit: float = safe.top + 92.0
+	var bottom_limit: float = get_viewport_rect().size.y - safe.bottom - 12.0
 	if top_hand.get_child_count() > 0:
 		north_avatar.visible = true
 	if left_hand.get_child_count() > 0:
 		var first_card := left_hand.get_child(0) as Control
 		var card_top_y: float = left_hand.global_position.y + first_card.position.y
-		west_avatar.offset_top = card_top_y - avatar_gap - avatar_h
-		west_avatar.offset_bottom = card_top_y - avatar_gap
+		var west_top := clampf(card_top_y - avatar_gap - AVATAR_H, top_limit, bottom_limit - AVATAR_H)
+		west_avatar.offset_top = west_top
+		west_avatar.offset_bottom = west_top + AVATAR_H
 		west_avatar.visible = true
 	if right_hand.get_child_count() > 0:
 		var first_card := right_hand.get_child(0) as Control
 		var card_top_y: float = right_hand.global_position.y + first_card.position.y
-		east_avatar.offset_top = card_top_y - avatar_gap - avatar_h
-		east_avatar.offset_bottom = card_top_y - avatar_gap
+		var east_top := clampf(card_top_y - avatar_gap - AVATAR_H, top_limit, bottom_limit - AVATAR_H)
+		east_avatar.offset_top = east_top
+		east_avatar.offset_bottom = east_top + AVATAR_H
 		east_avatar.visible = true
 
 func _refresh_opponent_names() -> void:
@@ -281,21 +287,11 @@ func _apply_card_sizing() -> void:
 	var vp_rect: Rect2 = get_viewport_rect()
 	var vp_w: float = vp_rect.size.x
 	# Safe area insets (notches, home indicators). Zero on desktop.
-	var safe_top: float = 0.0
-	var safe_bottom: float = 0.0
-	var safe_left: float = 0.0
-	var safe_right: float = 0.0
-	var win_size := DisplayServer.window_get_size()
-	var safe := DisplayServer.get_display_safe_area()
-	if safe.size.x > 0 and safe.size.y > 0 and win_size.x > 0 and win_size.y > 0:
-		# Convert safe-area pixels to viewport units (they may differ under
-		# stretching). vp_rect.size reports the stretched viewport size.
-		var sx: float = vp_w / float(win_size.x)
-		var sy: float = vp_rect.size.y / float(win_size.y)
-		safe_top = maxf(0.0, float(safe.position.y) * sy)
-		safe_bottom = maxf(0.0, float(win_size.y - (safe.position.y + safe.size.y)) * sy)
-		safe_left = maxf(0.0, float(safe.position.x) * sx)
-		safe_right = maxf(0.0, float(win_size.x - (safe.position.x + safe.size.x)) * sx)
+	var safe := _safe_area_offsets()
+	var safe_top: float = safe.top
+	var safe_bottom: float = safe.bottom
+	var safe_left: float = safe.left
+	var safe_right: float = safe.right
 	# Subtract the gutter from both dimensions so the cards are sized against
 	# the actual playable region. Without this, cards span the safe-area-only
 	# width and the leftmost/rightmost ones land flush against the viewport edge.
@@ -343,14 +339,13 @@ func _apply_card_sizing() -> void:
 		hud_strip.offset_bottom = safe_top + hud_height
 	# Gap between avatars and adjacent card rows.
 	var name_gap: float = 10.0
-	var avatar_h: float = 66.0  # 48 circle + 2 spacing + ~14 label
 	# North avatar: hidden until dealing populates top hand.
 	north_avatar.visible = false
-	north_avatar.offset_left = -24.0
-	north_avatar.offset_right = 24.0
+	north_avatar.offset_left = -AVATAR_W / 2.0
+	north_avatar.offset_right = AVATAR_W / 2.0
 	north_avatar.offset_top = safe_top + hud_height
-	north_avatar.offset_bottom = safe_top + hud_height + avatar_h
-	var top_hand_top: float = safe_top + hud_height + avatar_h + name_gap
+	north_avatar.offset_bottom = safe_top + hud_height + AVATAR_H
+	var top_hand_top: float = safe_top + hud_height + AVATAR_H + name_gap
 	top_hand_node.offset_top = top_hand_top
 	var top_hand_bottom: float = top_hand_top + sh + 4.0
 	top_hand_node.offset_bottom = top_hand_bottom
@@ -362,17 +357,16 @@ func _apply_card_sizing() -> void:
 	# Bottom area: SouthAvatar sits above BottomHand so the trick count
 	# is always visible and never covered by cards.
 	var bottom_hand_height: float = h + 6.0
-	var _south_section: float = bottom_hand_height + name_gap + avatar_h + safe_bottom
+	var _south_section: float = bottom_hand_height + name_gap + AVATAR_H + safe_bottom
 	# West/East avatars: horizontal layout set now; vertical deferred to
 	# _reposition_side_avatars() after dealing populates containers.
-	var side_avatar_w: float = 48.0
 	west_avatar.anchor_left = 0.0
 	west_avatar.anchor_right = 0.0
 	west_avatar.offset_left = safe_left + EDGE_GUTTER
-	west_avatar.offset_right = safe_left + EDGE_GUTTER + side_avatar_w
+	west_avatar.offset_right = safe_left + EDGE_GUTTER + AVATAR_W
 	east_avatar.anchor_left = 1.0
 	east_avatar.anchor_right = 1.0
-	east_avatar.offset_left = -safe_right - EDGE_GUTTER - side_avatar_w
+	east_avatar.offset_left = -safe_right - EDGE_GUTTER - AVATAR_W
 	east_avatar.offset_right = -safe_right - EDGE_GUTTER
 	# Hide until _reposition_side_avatars() places them at the correct height.
 	west_avatar.visible = false
@@ -387,21 +381,37 @@ func _apply_card_sizing() -> void:
 	# distance from the viewport bottom to the avatar's bottom edge — the same
 	# offset chain bottom_hand uses, plus name_gap clearance.
 	var south_avatar_top: float = bottom_hand_height + name_gap + safe_bottom + EDGE_GUTTER
-	south_avatar.offset_left = -24.0
-	south_avatar.offset_right = 24.0
-	south_avatar.offset_top = -(south_avatar_top + avatar_h)
+	south_avatar.offset_left = -AVATAR_W / 2.0
+	south_avatar.offset_right = AVATAR_W / 2.0
+	south_avatar.offset_top = -(south_avatar_top + AVATAR_H)
 	south_avatar.offset_bottom = -south_avatar_top
-	mid_row.offset_bottom = -(south_avatar_top + avatar_h + name_gap)
+	mid_row.offset_bottom = -(south_avatar_top + AVATAR_H + name_gap)
 	# Respect horizontal safe insets on MidRow so side hands clear any
 	# landscape-notch cutouts, and add EDGE_GUTTER so face-down stacks at the
 	# left/right ends of MidRow can never sit flush against the viewport.
 	mid_row.offset_left = safe_left + EDGE_GUTTER
 	mid_row.offset_right = -safe_right - EDGE_GUTTER
 	# Toast sits just above the south avatar.
-	toast_label.offset_top = -(south_avatar_top + avatar_h + 20.0)
-	toast_label.offset_bottom = -(south_avatar_top + avatar_h)
+	toast_label.offset_top = -(south_avatar_top + AVATAR_H + 20.0)
+	toast_label.offset_bottom = -(south_avatar_top + AVATAR_H)
 	if top_hand.get_child_count() > 0 or left_hand.get_child_count() > 0 or right_hand.get_child_count() > 0:
 		call_deferred("_reposition_side_avatars")
+
+func _safe_area_offsets() -> Dictionary:
+	var vp_rect: Rect2 = get_viewport_rect()
+	var win_size := DisplayServer.window_get_size()
+	var safe := DisplayServer.get_display_safe_area()
+	var offsets := {top = 0.0, bottom = 0.0, left = 0.0, right = 0.0}
+	if safe.size.x > 0 and safe.size.y > 0 and win_size.x > 0 and win_size.y > 0:
+		# Convert safe-area pixels to viewport units (they may differ under
+		# stretching). vp_rect.size reports the stretched viewport size.
+		var sx: float = vp_rect.size.x / float(win_size.x)
+		var sy: float = vp_rect.size.y / float(win_size.y)
+		offsets.top = maxf(0.0, float(safe.position.y) * sy)
+		offsets.bottom = maxf(0.0, float(win_size.y - (safe.position.y + safe.size.y)) * sy)
+		offsets.left = maxf(0.0, float(safe.position.x) * sx)
+		offsets.right = maxf(0.0, float(win_size.x - (safe.position.x + safe.size.x)) * sx)
+	return offsets
 
 func _apply_trick_slot_layout() -> void:
 	var w: float = _card_size.x
@@ -475,6 +485,9 @@ func _connect_signals() -> void:
 		var net := src as NetGameView
 		net.round_starting.connect(_on_round_started)
 		net.full_state_applied.connect(_on_full_state_applied)
+		net.seat_taken_over_by_ai.connect(func(_seat_index: int, _display_name: String, _reason: String):
+			_refresh_opponent_names()
+		)
 		# Note: begin_live() is deliberately deferred to _ready's tail end so
 		# the queue drain — which can include MSG_FULL_STATE on rejoin — runs
 		# after every overlay has been instantiated.
@@ -1170,6 +1183,7 @@ func _place_snapped_trick_card(seat: int, node: Control) -> void:
 
 func _on_round_started(_dealer_seat: int, _trump_selector_seat: int) -> void:
 	_round_gen += 1
+	_refresh_opponent_names()
 	# Dismiss any stale win screen from the previous round. In SP this is
 	# already hidden locally when the Next Round button is pressed, but in MP
 	# only the host's press advances the round — non-host clients need the
