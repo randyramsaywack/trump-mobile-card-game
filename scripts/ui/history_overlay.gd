@@ -37,6 +37,7 @@ func _ready() -> void:
 
 func _apply_mockup_style() -> void:
 	VisualStyle.apply_felt_background(self)
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP
 	dim.color = Color(0, 0, 0, 0.14)
 	panel.anchor_left = 0.035
 	panel.anchor_top = 0.06
@@ -75,32 +76,23 @@ func _clear_list() -> void:
 		child.queue_free()
 
 func _show_screenshot_sample() -> void:
-	var trick_1_win := Card.new(Card.Suit.HEARTS, Card.Rank.ACE)
-	var trick_2_win := Card.new(Card.Suit.SPADES, Card.Rank.KING)
-	show_history([
-		{
-			"trick_number": 1,
-			"winning_team": "player_team",
-			"winning_card": trick_1_win,
+	var sample: Array = []
+	for i in range(7):
+		var suit := Card.Suit.HEARTS if i % 2 == 0 else Card.Suit.SPADES
+		var winner_pos := POSITION_ORDER[i % POSITION_ORDER.size()]
+		var winning_card := Card.new(suit, Card.Rank.ACE - (i % 4))
+		sample.append({
+			"trick_number": i + 1,
+			"winning_team": "player_team" if winner_pos in ["bottom", "top"] else "opponents",
+			"winning_card": winning_card,
 			"cards_played": [
-				{"position": "bottom", "player": "Randy", "card": trick_1_win},
-				{"position": "top", "player": "Jamie", "card": Card.new(Card.Suit.HEARTS, Card.Rank.QUEEN)},
-				{"position": "left", "player": "Alex", "card": Card.new(Card.Suit.HEARTS, Card.Rank.TEN)},
-				{"position": "right", "player": "Morgan", "card": Card.new(Card.Suit.CLUBS, Card.Rank.TWO)},
+				{"position": "bottom", "player": "Randy", "card": winning_card if winner_pos == "bottom" else Card.new(suit, Card.Rank.FIVE)},
+				{"position": "top", "player": "Jamie", "card": winning_card if winner_pos == "top" else Card.new(suit, Card.Rank.TEN)},
+				{"position": "left", "player": "Alex", "card": winning_card if winner_pos == "left" else Card.new(suit, Card.Rank.SEVEN)},
+				{"position": "right", "player": "Morgan", "card": winning_card if winner_pos == "right" else Card.new(suit, Card.Rank.THREE)},
 			],
-		},
-		{
-			"trick_number": 2,
-			"winning_team": "opponents",
-			"winning_card": trick_2_win,
-			"cards_played": [
-				{"position": "bottom", "player": "Randy", "card": Card.new(Card.Suit.SPADES, Card.Rank.FOUR)},
-				{"position": "top", "player": "Jamie", "card": Card.new(Card.Suit.SPADES, Card.Rank.NINE)},
-				{"position": "left", "player": "Alex", "card": trick_2_win},
-				{"position": "right", "player": "Morgan", "card": Card.new(Card.Suit.SPADES, Card.Rank.JACK)},
-			],
-		},
-	])
+		})
+	show_history(sample)
 
 func _build_trick_row(entry: Dictionary) -> Control:
 	var panel := PanelContainer.new()
@@ -115,22 +107,27 @@ func _build_trick_row(entry: Dictionary) -> Control:
 	panel_style.content_margin_top = 6
 	panel_style.content_margin_bottom = 6
 	panel.add_theme_stylebox_override("panel", panel_style)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var row := VBoxContainer.new()
 	row.add_theme_constant_override("separation", 4)
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(row)
 
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 8)
+	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var num_label := Label.new()
+	num_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	num_label.text = "%d" % int(entry["trick_number"])
 	num_label.add_theme_color_override("font_color", COLOR_GOLD)
 	num_label.add_theme_font_size_override("font_size", 20)
 	header.add_child(num_label)
 
 	var winner_label := Label.new()
+	winner_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var winning_team := String(entry["winning_team"])
 	winner_label.text = "Your Team won" if winning_team == "player_team" else "Opponents won"
 	winner_label.add_theme_color_override("font_color", COLOR_TEXT_DIM)
@@ -142,6 +139,7 @@ func _build_trick_row(entry: Dictionary) -> Control:
 
 	var cards_row := HBoxContainer.new()
 	cards_row.add_theme_constant_override("separation", 10)
+	cards_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var winning_card: Card = entry["winning_card"] as Card
 	var by_pos: Dictionary = {}
 	for c in entry["cards_played"]:
@@ -159,13 +157,16 @@ func _build_card_chip(card_entry: Dictionary, winning_card: Card) -> Control:
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var container := VBoxContainer.new()
 	container.add_theme_constant_override("separation", 1)
 	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(container)
 
 	var player_label := Label.new()
+	player_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	player_label.text = String(card_entry["player"])
 	player_label.add_theme_color_override("font_color", COLOR_TEXT_DIM)
 	player_label.add_theme_font_size_override("font_size", 10)
@@ -187,6 +188,7 @@ func _build_card_chip(card_entry: Dictionary, winning_card: Card) -> Control:
 		panel.add_theme_stylebox_override("panel", style)
 		player_label.add_theme_color_override("font_color", COLOR_WIN_BORDER)
 	var card_label := Label.new()
+	card_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card_label.text = Card.RANK_NAMES[card.rank] + Card.SUIT_SYMBOLS[card.suit]
 	card_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card_label.add_theme_font_size_override("font_size", 16)

@@ -47,9 +47,10 @@ func _apply_mockup_style() -> void:
 	VisualStyle.apply_felt_background(self)
 	var layout := $CenterLayout as VBoxContainer
 	layout.anchor_left = 0.07
-	layout.anchor_top = 0.075
+	layout.anchor_top = 0.04
 	layout.anchor_right = 0.93
-	layout.anchor_bottom = 0.94
+	layout.anchor_bottom = 0.96
+	layout.alignment = BoxContainer.ALIGNMENT_CENTER
 	layout.add_theme_constant_override("separation", 13)
 	title_label.text = "TRUMP"
 	VisualStyle.apply_title(title_label, 58)

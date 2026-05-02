@@ -4,7 +4,7 @@ const VisualStyle := preload("res://scripts/ui/visual_style.gd")
 
 @onready var background: ColorRect = $Background
 @onready var cards_container: HBoxContainer = $CardsContainer
-@onready var suit_buttons: HBoxContainer = $SuitButtons
+@onready var suit_buttons: GridContainer = $SuitButtons
 @onready var spades_btn: Button = $SuitButtons/SpadesBtn
 @onready var hearts_btn: Button = $SuitButtons/HeartsBtn
 @onready var diamonds_btn: Button = $SuitButtons/DiamondsBtn
@@ -15,7 +15,7 @@ const VisualStyle := preload("res://scripts/ui/visual_style.gd")
 const CardScene := preload("res://scenes/card.tscn")
 const SLIDE_OFFSET := 30.0
 const CARD_GAP := 8.0
-const SUIT_BUTTON_GAP := 6.0
+const SUIT_GRID_GAP := 8.0
 
 var _anim_tween: Tween = null
 var _selector_card_size: Vector2 = Vector2(60, 90)
@@ -41,34 +41,46 @@ func _apply_mockup_style() -> void:
 	VisualStyle.apply_felt_background(self)
 	background.color = Color(0, 0, 0, 0.12)
 	sheet.anchor_left = 0.04
-	sheet.anchor_top = 0.08
+	sheet.anchor_top = 0.07
 	sheet.anchor_right = 0.96
-	sheet.anchor_bottom = 0.92
+	sheet.anchor_bottom = 0.94
 	sheet.add_theme_stylebox_override("panel", VisualStyle.panel_style(0.20, 10, 0.25))
 	prompt_label.text = "SELECT TRUMP"
 	VisualStyle.apply_title(prompt_label, 24)
 	prompt_label.anchor_top = 0.10
 	prompt_label.anchor_bottom = 0.18
-	cards_container.anchor_top = 0.30
-	cards_container.anchor_bottom = 0.46
-	suit_buttons.anchor_top = 0.58
-	suit_buttons.anchor_bottom = 0.66
+	cards_container.anchor_left = 0.075
+	cards_container.anchor_top = 0.29
+	cards_container.anchor_right = 0.925
+	cards_container.anchor_bottom = 0.45
+	suit_buttons.anchor_left = 0.10
+	suit_buttons.anchor_top = 0.54
+	suit_buttons.anchor_right = 0.90
+	suit_buttons.anchor_bottom = 0.71
+	suit_buttons.columns = 2
 	for btn in [spades_btn, hearts_btn, diamonds_btn, clubs_btn]:
 		VisualStyle.apply_button(btn, "normal")
 		btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 func _apply_layout_sizing() -> void:
 	var vp_w: float = get_viewport_rect().size.x
-	var content_w: float = maxf(1.0, vp_w * 0.9)
-	var card_w := floorf(clampf((content_w - (4.0 * CARD_GAP)) / 5.0, 46.0, 60.0))
+	var card_content_w: float = maxf(1.0, vp_w * 0.84)
+	var card_gap := floorf(clampf(vp_w * 0.015, 4.0, CARD_GAP))
+	cards_container.add_theme_constant_override("separation", int(card_gap))
+	var card_w := floorf(clampf((card_content_w - (4.0 * card_gap)) / 5.0, 36.0, 68.0))
 	_selector_card_size = Vector2(card_w, roundf(card_w * 1.5))
-	var button_w := floorf(clampf((content_w - (3.0 * SUIT_BUTTON_GAP)) / 4.0, 62.0, 76.0))
-	_selector_button_size = Vector2(button_w, 54.0)
+	var button_content_w: float = maxf(1.0, vp_w * 0.78)
+	suit_buttons.add_theme_constant_override("h_separation", SUIT_GRID_GAP)
+	suit_buttons.add_theme_constant_override("v_separation", SUIT_GRID_GAP)
+	var button_w := floorf(clampf((button_content_w - SUIT_GRID_GAP) / 2.0, 112.0, 164.0))
+	_selector_button_size = Vector2(button_w, 50.0)
 	for button in [spades_btn, hearts_btn, diamonds_btn, clubs_btn]:
 		button.custom_minimum_size = _selector_button_size
-		button.add_theme_font_size_override("font_size", 12 if button_w < 70.0 else 14)
+		button.add_theme_font_size_override("font_size", 14)
 	for child in cards_container.get_children():
-		(child as Control).custom_minimum_size = _selector_card_size
+		var ctrl := child as Control
+		ctrl.custom_minimum_size = _selector_card_size
+		ctrl.size = _selector_card_size
 
 func show_for_human(initial_cards: Array) -> void:
 	prompt_label.text = "SELECT TRUMP"
@@ -136,9 +148,11 @@ func _populate_cards(cards: Array) -> void:
 		# Display only — block interaction without dimming via set_valid.
 		card_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card_node.custom_minimum_size = _selector_card_size
+		card_node.size = _selector_card_size
 		card_node.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		card_node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		cards_container.add_child(card_node)
+	call_deferred("_apply_layout_sizing")
 
 func _choose(suit: Card.Suit) -> void:
 	if GameState.multiplayer_mode:

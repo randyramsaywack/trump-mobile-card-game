@@ -91,6 +91,18 @@ vertical_alignment = 1
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(1, 1, 1, 0.92)
 
+[node name="FinalBooksLabel" type="Label" parent="."]
+anchors_preset = -1
+anchor_left = 0.15
+anchor_top = 0.57
+anchor_right = 0.85
+anchor_bottom = 0.63
+text = "Final Tricks"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 1, 1, 0.92)
+
 [node name="HistoryBtn" type="Button" parent="."]
 anchors_preset = -1
 anchor_left = 0.15

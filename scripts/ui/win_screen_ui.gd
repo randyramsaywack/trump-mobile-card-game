@@ -10,6 +10,7 @@ const COLOR_LOSS := Color(0.85, 0.85, 0.85, 0.75)  # muted white
 @onready var background: ColorRect = $Background
 @onready var result_label: Label = $ResultLabel
 @onready var session_label: Label = $SessionLabel
+@onready var final_books_label: Label = $FinalBooksLabel
 @onready var history_btn: Button = $HistoryBtn
 @onready var buttons_container: HBoxContainer = $Buttons
 @onready var next_round_btn: Button = $Buttons/NextRoundBtn
@@ -26,7 +27,7 @@ func _ready() -> void:
 	# promoted someone else to host between rounds).
 	NetworkState.room_state_changed.connect(_refresh_next_round_button)
 	if "--shot-win-screen" in OS.get_cmdline_user_args():
-		call_deferred("show_result", 0, [3, 2])
+		call_deferred("show_result", 0, [3, 2], [7, 5])
 
 func _apply_mockup_style() -> void:
 	VisualStyle.apply_felt_background(self)
@@ -38,12 +39,14 @@ func _apply_mockup_style() -> void:
 	result_sheet.add_theme_stylebox_override("panel", VisualStyle.panel_style(0.42, 10, 0.78))
 	result_label.anchor_top = 0.14
 	result_label.anchor_bottom = 0.30
-	session_label.anchor_top = 0.34
-	session_label.anchor_bottom = 0.43
-	history_btn.anchor_top = 0.72
-	history_btn.anchor_bottom = 0.79
-	buttons_container.anchor_top = 0.55
-	buttons_container.anchor_bottom = 0.68
+	session_label.anchor_top = 0.31
+	session_label.anchor_bottom = 0.39
+	final_books_label.anchor_top = 0.42
+	final_books_label.anchor_bottom = 0.49
+	history_btn.anchor_top = 0.73
+	history_btn.anchor_bottom = 0.80
+	buttons_container.anchor_top = 0.56
+	buttons_container.anchor_bottom = 0.69
 	VisualStyle.apply_button(history_btn, "normal")
 	VisualStyle.apply_button(next_round_btn, "primary")
 	VisualStyle.apply_button(main_menu_btn, "normal")
@@ -54,7 +57,7 @@ func _apply_mockup_style() -> void:
 func _on_history_pressed() -> void:
 	history_requested.emit()
 
-func show_result(winning_team: int, session_wins: Array) -> void:
+func show_result(winning_team: int, session_wins: Array, final_books: Array = []) -> void:
 	VisualStyle.apply_title(result_label, 28)
 	if winning_team == 0:
 		result_label.text = "YOUR TEAM WINS!"
@@ -64,6 +67,12 @@ func show_result(winning_team: int, session_wins: Array) -> void:
 		result_label.add_theme_color_override("font_color", COLOR_LOSS)
 	session_label.text = "Session Wins\n%d / %d" % [session_wins[0], session_wins[0] + session_wins[1]]
 	VisualStyle.apply_label(session_label, 20, VisualStyle.GOLD_SOFT)
+	if final_books.size() >= 2:
+		final_books_label.text = "Final Tricks\n%d / %d" % [final_books[0], final_books[1]]
+		final_books_label.visible = true
+	else:
+		final_books_label.visible = false
+	VisualStyle.apply_label(final_books_label, 17, VisualStyle.TEXT)
 	_refresh_next_round_button()
 	_animate_entrance()
 
@@ -95,6 +104,7 @@ func _animate_entrance() -> void:
 	result_label.modulate.a = 0.0
 	# Session label
 	session_label.modulate.a = 0.0
+	final_books_label.modulate.a = 0.0
 	# Buttons + history delayed
 	history_btn.modulate.a = 0.0
 	buttons_container.modulate.a = 0.0
@@ -104,6 +114,7 @@ func _animate_entrance() -> void:
 	tw.tween_property(result_label, "modulate:a", 1.0, 0.25 * m)
 	tw.tween_property(result_label, "scale", Vector2.ONE, 0.25 * m).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 	tw.tween_property(session_label, "modulate:a", 1.0, 0.2 * m).set_delay(0.1 * m)
+	tw.tween_property(final_books_label, "modulate:a", 1.0, 0.2 * m).set_delay(0.12 * m)
 	tw.tween_property(history_btn, "modulate:a", 1.0, 0.15 * m).set_delay(0.15 * m)
 	tw.tween_property(buttons_container, "modulate:a", 1.0, 0.15 * m).set_delay(0.15 * m)
 

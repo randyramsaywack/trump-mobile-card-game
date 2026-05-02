@@ -54,6 +54,10 @@ const SMALL_H_SEP_RATIO := 0.54           # top-hand horizontal separation
 const SMALL_V_SEP_RATIO := 0.88           # side-hand vertical separation
 const AVATAR_W := 84.0
 const AVATAR_H := 68.0
+const HUD_TOP_PADDING := 8.0
+const HUD_HEIGHT := 96.0
+const HUD_CONTENT_PADDING := 10.0
+const HUD_TO_PARTNER_GAP := 14.0
 ## Padding between every screen-edge-anchored UI element (hands, avatars, HUD,
 ## trick area) and the corresponding viewport edge. Cards are sized against
 ## viewport width minus 2× this gutter so the bottom hand never crowds the
@@ -144,6 +148,15 @@ func _ready() -> void:
 	# mid-game rejoin it includes MSG_FULL_STATE which needs the overlays.
 	if GameState.multiplayer_mode:
 		(_source() as NetGameView).begin_live()
+	if "--shot-auto-trump" in OS.get_cmdline_user_args():
+		call_deferred("_shot_auto_select_trump")
+
+func _shot_auto_select_trump() -> void:
+	for _i in range(240):
+		await get_tree().process_frame
+		if _trump_selector_overlay != null and _trump_selector_overlay.visible:
+			_trump_selector_overlay.call("_choose", Card.Suit.SPADES)
+			return
 
 func _apply_mockup_style() -> void:
 	VisualStyle.apply_felt_background(self)
@@ -156,7 +169,9 @@ func _apply_mockup_style() -> void:
 	VisualStyle.apply_label(timer_label, 16, VisualStyle.GOLD_SOFT)
 	for btn in [history_button, settings_button]:
 		VisualStyle.apply_button(btn, "normal")
-		btn.custom_minimum_size = Vector2(44, 44)
+		btn.custom_minimum_size = Vector2(38, 38)
+		btn.add_theme_font_size_override("font_size", 16)
+		btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	history_button.text = "≡"
 	settings_button.text = "⚙"
 
@@ -205,7 +220,7 @@ func _refresh_south_name() -> void:
 func _reposition_side_avatars() -> void:
 	var avatar_gap: float = 10.0
 	var safe := _safe_area_offsets()
-	var top_limit: float = safe.top + 92.0
+	var top_limit: float = safe.top + HUD_TOP_PADDING + HUD_HEIGHT + HUD_TO_PARTNER_GAP
 	var bottom_limit: float = get_viewport_rect().size.y - safe.bottom - 12.0
 	if top_hand.get_child_count() > 0:
 		north_avatar.visible = true
@@ -345,25 +360,22 @@ func _apply_card_sizing() -> void:
 	var hud: Control = $HUD as Control
 	hud.offset_left = EDGE_GUTTER + safe_left
 	hud.offset_right = -EDGE_GUTTER - safe_right
-	# HUD height: row1 uses 44px touch-target buttons, row2 ~16px small labels,
-	# row3 ~22px for the MP turn timer, plus 10px breathing room before the
-	# partner avatar. The previous 60px allocation clipped row3 entirely.
-	var hud_height: float = 92.0
-	hud.offset_top = safe_top
-	hud.offset_bottom = safe_top + hud_height
+	var hud_top: float = safe_top + HUD_TOP_PADDING
+	hud.offset_top = hud_top + HUD_CONTENT_PADDING
+	hud.offset_bottom = hud_top + HUD_HEIGHT - HUD_CONTENT_PADDING
 	var hud_strip := get_node_or_null("HUDStrip") as Control
 	if hud_strip != null:
-		hud_strip.offset_top = safe_top
-		hud_strip.offset_bottom = safe_top + hud_height
+		hud_strip.offset_top = hud_top
+		hud_strip.offset_bottom = hud_top + HUD_HEIGHT
 	# Gap between avatars and adjacent card rows.
 	var name_gap: float = 10.0
 	# North avatar: hidden until dealing populates top hand.
 	north_avatar.visible = false
 	north_avatar.offset_left = -AVATAR_W / 2.0
 	north_avatar.offset_right = AVATAR_W / 2.0
-	north_avatar.offset_top = safe_top + hud_height
-	north_avatar.offset_bottom = safe_top + hud_height + AVATAR_H
-	var top_hand_top: float = safe_top + hud_height + AVATAR_H + name_gap
+	north_avatar.offset_top = hud_top + HUD_HEIGHT + HUD_TO_PARTNER_GAP
+	north_avatar.offset_bottom = north_avatar.offset_top + AVATAR_H
+	var top_hand_top: float = north_avatar.offset_bottom + name_gap
 	top_hand_node.offset_top = top_hand_top
 	var top_hand_bottom: float = top_hand_top + sh + 4.0
 	top_hand_node.offset_bottom = top_hand_bottom
@@ -1028,8 +1040,17 @@ func _on_round_ended(winning_team: int) -> void:
 	var wins := GameState.get_session_wins()
 	session_label.text = "Session: %d–%d" % [wins[0], wins[1]]
 	if _win_screen_overlay != null:
-		_win_screen_overlay.call("show_result", winning_team, wins)
+		_win_screen_overlay.call("show_result", winning_team, wins, _current_books())
 		_win_screen_overlay.visible = true
+
+func _current_books() -> Array:
+	var src := _source()
+	if src == null:
+		return [0, 0]
+	var books_value = src.get("books")
+	if books_value is Array and books_value.size() >= 2:
+		return [int(books_value[0]), int(books_value[1])]
+	return [0, 0]
 
 # ── Table management ──────────────────────────────────────────────────────────
 
@@ -1106,7 +1127,7 @@ func _on_full_state_applied(snapshot: Dictionary) -> void:
 		# only on round_ended; here the snapshot doesn't carry it, so derive
 		# from books (whoever has 7).
 		var winning_team := 0 if net.books[0] >= 7 else 1
-		_win_screen_overlay.call("show_result", winning_team, net.session_wins)
+		_win_screen_overlay.call("show_result", winning_team, net.session_wins, net.books)
 		_win_screen_overlay.visible = true
 	elif server_state == int(NetGameView.RoundState.TRUMP_SELECTION):
 		var seat := net.trump_selector_seat
