@@ -17,6 +17,7 @@ const SettingsOverlayScene := preload("res://scenes/ui/settings_overlay.tscn")
 const StatsOverlayScene := preload("res://scenes/ui/stats_overlay.tscn")
 const HowToPlayOverlayScene := preload("res://scenes/ui/how_to_play_overlay.tscn")
 const CreditsOverlayScene := preload("res://scenes/ui/credits_overlay.tscn")
+const VisualStyle := preload("res://scripts/ui/visual_style.gd")
 
 var _settings_overlay: Control = null
 var _stats_overlay: Control = null
@@ -24,6 +25,7 @@ var _how_to_play_overlay: Control = null
 var _credits_overlay: Control = null
 
 func _ready() -> void:
+	_apply_mockup_style()
 	# Load decorative fonts via raw bytes to bypass Godot's broken fontdata import (4.6.x).
 	# The .ttf files use the "keep" importer (see .import sidecars) so the raw
 	# bytes are bundled as-is in the exported PCK.
@@ -40,6 +42,55 @@ func _ready() -> void:
 	stats_btn.pressed.connect(_on_stats)
 	how_to_play_btn.pressed.connect(_on_how_to_play)
 	credits_btn.pressed.connect(_on_credits)
+
+func _apply_mockup_style() -> void:
+	VisualStyle.apply_felt_background(self)
+	var layout := $CenterLayout as VBoxContainer
+	layout.anchor_left = 0.07
+	layout.anchor_top = 0.075
+	layout.anchor_right = 0.93
+	layout.anchor_bottom = 0.94
+	layout.add_theme_constant_override("separation", 13)
+	title_label.text = "TRUMP"
+	VisualStyle.apply_title(title_label, 58)
+	VisualStyle.apply_label(subtitle_label, 15, VisualStyle.GOLD_SOFT)
+	subtitle_label.text = "CARD GAME"
+	for suit in [spades_suit, hearts_suit, diamonds_suit, clubs_suit]:
+		VisualStyle.apply_label(suit, 18, VisualStyle.GOLD_SOFT)
+	var buttons := [
+		[single_player_btn, "♠  SINGLE PLAYER", "primary", Vector2(272, 58)],
+		[multiplayer_btn, "♣  MULTIPLAYER", "primary", Vector2(272, 58)],
+		[options_btn, "SETTINGS", "normal", Vector2(76, 66)],
+		[stats_btn, "STATS", "normal", Vector2(76, 66)],
+		[how_to_play_btn, "HOW\nTO PLAY", "normal", Vector2(76, 66)],
+		[credits_btn, "CREDITS", "normal", Vector2(76, 66)],
+	]
+	for item in buttons:
+		var btn := item[0] as Button
+		btn.text = item[1]
+		btn.custom_minimum_size = item[3]
+		btn.autowrap_mode = TextServer.AUTOWRAP_OFF
+		VisualStyle.apply_button(btn, item[2])
+		if btn not in [single_player_btn, multiplayer_btn]:
+			btn.add_theme_font_size_override("font_size", 11)
+	var utility_row := layout.get_node_or_null("UtilityRow") as HBoxContainer
+	if utility_row == null:
+		utility_row = HBoxContainer.new()
+		utility_row.name = "UtilityRow"
+		utility_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		utility_row.add_theme_constant_override("separation", 8)
+		layout.add_child(utility_row)
+	for btn in [options_btn, stats_btn, how_to_play_btn, credits_btn]:
+		if btn.get_parent() != utility_row:
+			btn.get_parent().remove_child(btn)
+			utility_row.add_child(btn)
+	var spacer := layout.get_node_or_null("MenuSpacer") as Control
+	if spacer == null:
+		spacer = Control.new()
+		spacer.name = "MenuSpacer"
+		spacer.custom_minimum_size = Vector2(0, 34)
+		layout.add_child(spacer)
+		layout.move_child(spacer, layout.get_child_count() - 2)
 
 ## Android hardware back button. Closes any open overlay, otherwise quits.
 func _notification(what: int) -> void:

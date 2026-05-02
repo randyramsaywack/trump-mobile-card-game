@@ -2,6 +2,8 @@ extends Control
 
 signal history_requested()
 
+const VisualStyle := preload("res://scripts/ui/visual_style.gd")
+
 const COLOR_WIN := Color(0.788, 0.659, 0.298)      # gold #c9a84c
 const COLOR_LOSS := Color(0.85, 0.85, 0.85, 0.75)  # muted white
 
@@ -12,8 +14,10 @@ const COLOR_LOSS := Color(0.85, 0.85, 0.85, 0.75)  # muted white
 @onready var buttons_container: HBoxContainer = $Buttons
 @onready var next_round_btn: Button = $Buttons/NextRoundBtn
 @onready var main_menu_btn: Button = $Buttons/MainMenuBtn
+@onready var result_sheet: PanelContainer = $ResultSheet
 
 func _ready() -> void:
+	_apply_mockup_style()
 	history_btn.pressed.connect(_on_history_pressed)
 	next_round_btn.pressed.connect(_on_next_round)
 	main_menu_btn.pressed.connect(_on_main_menu)
@@ -21,18 +25,45 @@ func _ready() -> void:
 	# screen is visible (e.g., the original host disconnected and the server
 	# promoted someone else to host between rounds).
 	NetworkState.room_state_changed.connect(_refresh_next_round_button)
+	if "--shot-win-screen" in OS.get_cmdline_user_args():
+		call_deferred("show_result", 0, [3, 2])
+
+func _apply_mockup_style() -> void:
+	VisualStyle.apply_felt_background(self)
+	background.color = Color(0, 0, 0, 0.28)
+	result_sheet.anchor_left = 0.055
+	result_sheet.anchor_top = 0.08
+	result_sheet.anchor_right = 0.945
+	result_sheet.anchor_bottom = 0.92
+	result_sheet.add_theme_stylebox_override("panel", VisualStyle.panel_style(0.42, 10, 0.78))
+	result_label.anchor_top = 0.14
+	result_label.anchor_bottom = 0.30
+	session_label.anchor_top = 0.34
+	session_label.anchor_bottom = 0.43
+	history_btn.anchor_top = 0.72
+	history_btn.anchor_bottom = 0.79
+	buttons_container.anchor_top = 0.55
+	buttons_container.anchor_bottom = 0.68
+	VisualStyle.apply_button(history_btn, "normal")
+	VisualStyle.apply_button(next_round_btn, "primary")
+	VisualStyle.apply_button(main_menu_btn, "normal")
+	history_btn.text = "▤  VIEW HISTORY"
+	next_round_btn.text = "NEXT ROUND"
+	main_menu_btn.text = "MAIN MENU"
 
 func _on_history_pressed() -> void:
 	history_requested.emit()
 
 func show_result(winning_team: int, session_wins: Array) -> void:
+	VisualStyle.apply_title(result_label, 28)
 	if winning_team == 0:
-		result_label.text = "Your Team Wins!"
+		result_label.text = "YOUR TEAM WINS!"
 		result_label.add_theme_color_override("font_color", COLOR_WIN)
 	else:
-		result_label.text = "Opponents Win!"
+		result_label.text = "OPPONENTS WIN!"
 		result_label.add_theme_color_override("font_color", COLOR_LOSS)
-	session_label.text = "Session — You: %d | Opponents: %d" % [session_wins[0], session_wins[1]]
+	session_label.text = "Session Wins\n%d / %d" % [session_wins[0], session_wins[0] + session_wins[1]]
+	VisualStyle.apply_label(session_label, 20, VisualStyle.GOLD_SOFT)
 	_refresh_next_round_button()
 	_animate_entrance()
 
@@ -42,7 +73,7 @@ func _refresh_next_round_button() -> void:
 		next_round_btn.text = "Waiting for host…"
 	else:
 		next_round_btn.disabled = false
-		next_round_btn.text = "Next Round"
+		next_round_btn.text = "NEXT ROUND"
 
 func _on_next_round() -> void:
 	visible = false

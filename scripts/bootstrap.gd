@@ -44,6 +44,49 @@ func _ready() -> void:
 		get_tree().change_scene_to_file.call_deferred("res://scenes/game_table.tscn")
 		return
 
+	if "--shot-main-menu" in OS.get_cmdline_user_args():
+		print("[bootstrap] --shot-main-menu — direct to main_menu")
+		get_tree().change_scene_to_file.call_deferred("res://scenes/main_menu.tscn")
+		return
+
+	if "--shot-multiplayer-menu" in OS.get_cmdline_user_args():
+		print("[bootstrap] --shot-multiplayer-menu — direct to multiplayer_menu")
+		get_tree().change_scene_to_file.call_deferred("res://scenes/ui/multiplayer_menu.tscn")
+		return
+
+	if "--shot-room-waiting" in OS.get_cmdline_user_args():
+		print("[bootstrap] --shot-room-waiting — direct to room_waiting")
+		NetworkState.room_code = "KLMNPQ"
+		NetworkState.is_host = true
+		NetworkState.players = [
+			{"seat": 0, "username": "Randy", "is_host": true},
+			{"seat": 1, "username": "Jamie", "is_host": false},
+		]
+		get_tree().change_scene_to_file.call_deferred("res://scenes/ui/room_waiting.tscn")
+		return
+
+	if "--shot-settings-overlay" in OS.get_cmdline_user_args():
+		print("[bootstrap] --shot-settings-overlay — direct to settings_overlay")
+		GameState.multiplayer_mode = true
+		NetworkState.room_code = "KLMNPQ"
+		get_tree().change_scene_to_file.call_deferred("res://scenes/ui/settings_overlay.tscn")
+		return
+
+	if "--shot-trump-select" in OS.get_cmdline_user_args():
+		print("[bootstrap] --shot-trump-select — direct to trump_selector")
+		get_tree().change_scene_to_file.call_deferred("res://scenes/ui/trump_selector.tscn")
+		return
+
+	if "--shot-history-overlay" in OS.get_cmdline_user_args():
+		print("[bootstrap] --shot-history-overlay — direct to history_overlay")
+		get_tree().change_scene_to_file.call_deferred("res://scenes/ui/history_overlay.tscn")
+		return
+
+	if "--shot-win-screen" in OS.get_cmdline_user_args():
+		print("[bootstrap] --shot-win-screen — direct to win_screen")
+		get_tree().change_scene_to_file.call_deferred("res://scenes/ui/win_screen.tscn")
+		return
+
 	# Explicit dedicated server mode (headless export or --server flag)
 	if OS.has_feature("dedicated_server") or "--server" in OS.get_cmdline_args():
 		_start_server()

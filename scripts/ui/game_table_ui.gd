@@ -20,12 +20,14 @@ extends Control
 @onready var history_button: Button = $HUD/HUDRow1/HistoryButton
 @onready var trump_watermark: Label = $TrumpWatermark
 @onready var toast_label: Label = $Toast
+@onready var hud_strip: PanelContainer = $HUDStrip
 
 const CardScene := preload("res://scenes/card.tscn")
 const TrumpSelectorScene := preload("res://scenes/ui/trump_selector.tscn")
 const WinScreenScene := preload("res://scenes/ui/win_screen.tscn")
 const SettingsOverlayScene := preload("res://scenes/ui/settings_overlay.tscn")
 const HistoryOverlayScene := preload("res://scenes/ui/history_overlay.tscn")
+const VisualStyle := preload("res://scripts/ui/visual_style.gd")
 
 # Watermark colors per suit.
 const WATERMARK_RED := Color(0.75, 0.22, 0.17, 0.25)
@@ -102,6 +104,7 @@ var _shot_force_timer_visible: bool = false
 
 func _ready() -> void:
 	_shot_force_timer_visible = "--shot-show-timer" in OS.get_cmdline_user_args()
+	_apply_mockup_style()
 	# Safety net: ensure suit glyphs render even if the default font lacks them.
 	# iOS's default font doesn't ship U+2699 (⚙) or U+2261 (≡), so the HUD
 	# buttons need the symbol-font fallback too.
@@ -141,6 +144,21 @@ func _ready() -> void:
 	# mid-game rejoin it includes MSG_FULL_STATE which needs the overlays.
 	if GameState.multiplayer_mode:
 		(_source() as NetGameView).begin_live()
+
+func _apply_mockup_style() -> void:
+	VisualStyle.apply_felt_background(self)
+	if hud_strip != null:
+		hud_strip.add_theme_stylebox_override("panel", VisualStyle.panel_style(0.38, 0, 0.38))
+	VisualStyle.apply_label(trump_label, 16, VisualStyle.GOLD_SOFT)
+	VisualStyle.apply_label(books_label, 15, VisualStyle.TEXT)
+	VisualStyle.apply_label(session_label, 12, VisualStyle.TEXT_DIM)
+	VisualStyle.apply_label(turn_label, 12, VisualStyle.TEXT)
+	VisualStyle.apply_label(timer_label, 16, VisualStyle.GOLD_SOFT)
+	for btn in [history_button, settings_button]:
+		VisualStyle.apply_button(btn, "normal")
+		btn.custom_minimum_size = Vector2(44, 44)
+	history_button.text = "≡"
+	settings_button.text = "⚙"
 
 func _exit_tree() -> void:
 	# Release the wake lock when leaving the game scene.

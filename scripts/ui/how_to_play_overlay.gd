@@ -2,8 +2,11 @@ extends Control
 
 signal closed()
 
+const VisualStyle := preload("res://scripts/ui/visual_style.gd")
+
 @onready var body: RichTextLabel = $Panel/VBox/Scroll/Body
 @onready var close_button: Button = $Panel/VBox/CloseButton
+@onready var title_label: Label = $Panel/VBox/Title
 
 const RULES_TEXT := "[b]The Game[/b]
 Trump is a 4-player trick-taking card game. You and your partner (across the table) team up against the two opponents on your left and right. First team to 7 tricks wins the round.
@@ -34,8 +37,21 @@ First team to 7 tricks wins. The winning team picks trump next round; the losing
 • Don't waste a trump when your partner is already winning the trick."
 
 func _ready() -> void:
+	_apply_mockup_style()
 	body.text = RULES_TEXT
 	close_button.pressed.connect(_on_close_pressed)
+
+func _apply_mockup_style() -> void:
+	VisualStyle.apply_felt_background(self)
+	($Dim as ColorRect).color = Color(0, 0, 0, 0.42)
+	($Panel as PanelContainer).add_theme_stylebox_override("panel", VisualStyle.panel_style(0.92, 10, 0.82))
+	VisualStyle.apply_title(title_label, 24)
+	body.add_theme_color_override("default_color", VisualStyle.TEXT)
+	body.add_theme_color_override("font_selected_color", VisualStyle.GOLD_SOFT)
+	body.add_theme_font_size_override("normal_font_size", 13)
+	body.add_theme_font_size_override("bold_font_size", 14)
+	VisualStyle.apply_button(close_button, "normal")
+	close_button.text = "CLOSE"
 
 func _on_close_pressed() -> void:
 	visible = false

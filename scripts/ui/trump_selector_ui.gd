@@ -1,5 +1,7 @@
 extends Control
 
+const VisualStyle := preload("res://scripts/ui/visual_style.gd")
+
 @onready var background: ColorRect = $Background
 @onready var cards_container: HBoxContainer = $CardsContainer
 @onready var suit_buttons: HBoxContainer = $SuitButtons
@@ -8,6 +10,7 @@ extends Control
 @onready var diamonds_btn: Button = $SuitButtons/DiamondsBtn
 @onready var clubs_btn: Button = $SuitButtons/ClubsBtn
 @onready var prompt_label: Label = $PromptLabel
+@onready var sheet: PanelContainer = $Sheet
 
 const CardScene := preload("res://scenes/card.tscn")
 const SLIDE_OFFSET := 30.0
@@ -19,6 +22,7 @@ var _selector_card_size: Vector2 = Vector2(60, 90)
 var _selector_button_size: Vector2 = Vector2(64, 54)
 
 func _ready() -> void:
+	_apply_mockup_style()
 	# Safety net: ensure suit glyphs render on all platforms.
 	SuitFont.apply(spades_btn)
 	SuitFont.apply(hearts_btn)
@@ -30,6 +34,28 @@ func _ready() -> void:
 	clubs_btn.pressed.connect(func(): _choose(Card.Suit.CLUBS))
 	_apply_layout_sizing()
 	get_viewport().size_changed.connect(_apply_layout_sizing)
+	if "--shot-trump-select" in OS.get_cmdline_user_args():
+		call_deferred("_show_screenshot_sample")
+
+func _apply_mockup_style() -> void:
+	VisualStyle.apply_felt_background(self)
+	background.color = Color(0, 0, 0, 0.12)
+	sheet.anchor_left = 0.04
+	sheet.anchor_top = 0.08
+	sheet.anchor_right = 0.96
+	sheet.anchor_bottom = 0.92
+	sheet.add_theme_stylebox_override("panel", VisualStyle.panel_style(0.20, 10, 0.25))
+	prompt_label.text = "SELECT TRUMP"
+	VisualStyle.apply_title(prompt_label, 24)
+	prompt_label.anchor_top = 0.10
+	prompt_label.anchor_bottom = 0.18
+	cards_container.anchor_top = 0.30
+	cards_container.anchor_bottom = 0.46
+	suit_buttons.anchor_top = 0.58
+	suit_buttons.anchor_bottom = 0.66
+	for btn in [spades_btn, hearts_btn, diamonds_btn, clubs_btn]:
+		VisualStyle.apply_button(btn, "normal")
+		btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 func _apply_layout_sizing() -> void:
 	var vp_w: float = get_viewport_rect().size.x
@@ -45,8 +71,18 @@ func _apply_layout_sizing() -> void:
 		(child as Control).custom_minimum_size = _selector_card_size
 
 func show_for_human(initial_cards: Array) -> void:
-	prompt_label.text = "Choose Trump Suit"
+	prompt_label.text = "SELECT TRUMP"
 	_populate_cards(initial_cards)
+
+func _show_screenshot_sample() -> void:
+	show_for_human([
+		Card.new(Card.Suit.HEARTS, Card.Rank.ACE),
+		Card.new(Card.Suit.HEARTS, Card.Rank.QUEEN),
+		Card.new(Card.Suit.SPADES, Card.Rank.TEN),
+		Card.new(Card.Suit.DIAMONDS, Card.Rank.NINE),
+		Card.new(Card.Suit.CLUBS, Card.Rank.FIVE),
+	])
+	visible = true
 
 func animate_show() -> void:
 	_kill_tween()

@@ -3,6 +3,8 @@ extends Control
 ## Multiplayer entry menu. Collects a username and lets the player Create
 ## or Join a room. Delegates all networking to NetworkState.
 
+const VisualStyle := preload("res://scripts/ui/visual_style.gd")
+
 @onready var username_edit: LineEdit = $Center/UsernameEdit
 @onready var rejoin_button: Button = $Center/RejoinButton
 @onready var create_tab_button: Button = $Center/ModeRow/CreateTabButton
@@ -13,6 +15,8 @@ extends Control
 @onready var join_confirm_button: Button = $Center/JoinConfirmButton
 @onready var status_label: Label = $Center/StatusLabel
 @onready var back_button: Button = $Center/BackButton
+@onready var title_label: Label = $Center/TitleLabel
+@onready var username_label: Label = $Center/UsernameLabel
 
 ## True between pressing Create/Join and receiving `room_joined`, so we can
 ## route the arriving ROOM_JOINED signal into the correct next-scene.
@@ -20,6 +24,7 @@ var _pending_action: String = ""
 var _mode := "create"
 
 func _ready() -> void:
+	_apply_mockup_style()
 	# The multiplayer username is persisted separately from the single-player
 	# "You" placeholder so editing here never bleeds into single-player UI.
 	username_edit.text = Settings.mp_username
@@ -39,6 +44,38 @@ func _ready() -> void:
 	_set_mode("create")
 	_refresh_buttons()
 	_refresh_status()
+
+func _apply_mockup_style() -> void:
+	VisualStyle.apply_felt_background(self)
+	var center := $Center as VBoxContainer
+	center.anchor_left = 0.07
+	center.anchor_top = 0.075
+	center.anchor_right = 0.93
+	center.anchor_bottom = 0.94
+	center.add_theme_constant_override("separation", 11)
+	title_label.text = "←  MULTIPLAYER  →"
+	VisualStyle.apply_title(title_label, 25)
+	VisualStyle.apply_label(username_label, 13, VisualStyle.TEXT)
+	for btn in [create_tab_button, join_tab_button]:
+		VisualStyle.apply_button(btn, "segment")
+		btn.custom_minimum_size = Vector2(0, 42)
+		btn.text = btn.text.to_upper()
+	for edit in [username_edit, create_code_edit, join_code_edit]:
+		VisualStyle.apply_line_edit(edit)
+		edit.custom_minimum_size = Vector2(0, 44)
+	create_code_edit.placeholder_text = "Enter 6 letters"
+	join_code_edit.placeholder_text = "Enter 6-letter code"
+	create_button.text = "CREATE ROOM"
+	join_confirm_button.text = "JOIN ROOM"
+	rejoin_button.text = "REJOIN ROOM"
+	back_button.text = "←  BACK TO MENU"
+	for btn in [create_button, join_confirm_button]:
+		VisualStyle.apply_button(btn, "primary")
+		btn.custom_minimum_size = Vector2(0, 52)
+	for btn in [rejoin_button, back_button]:
+		VisualStyle.apply_button(btn, "normal")
+		btn.custom_minimum_size = Vector2(0, 42)
+	VisualStyle.apply_label(status_label, 12, VisualStyle.TEXT_DIM)
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
@@ -63,6 +100,10 @@ func _refresh_buttons() -> void:
 	var active_room := _has_active_room()
 	create_tab_button.button_pressed = _mode == "create"
 	join_tab_button.button_pressed = _mode == "join"
+	create_tab_button.add_theme_stylebox_override("normal", VisualStyle.button_style("segment", _mode == "create"))
+	join_tab_button.add_theme_stylebox_override("normal", VisualStyle.button_style("segment", _mode == "join"))
+	create_tab_button.add_theme_color_override("font_color", Color(0.08, 0.06, 0.02, 1) if _mode == "create" else VisualStyle.GOLD_SOFT)
+	join_tab_button.add_theme_color_override("font_color", Color(0.08, 0.06, 0.02, 1) if _mode == "join" else VisualStyle.GOLD_SOFT)
 	create_button.disabled = active_room or not valid or not _is_valid_room_code(create_code_edit.text)
 	join_confirm_button.disabled = active_room or not valid or not _is_valid_room_code(join_code_edit.text)
 	rejoin_button.disabled = not active_room and not valid
@@ -151,12 +192,12 @@ func _on_rejoin_pressed() -> void:
 
 func _refresh_rejoin_button() -> void:
 	if _has_active_room():
-		rejoin_button.text = "Resume Room (%s)" % NetworkState.room_code
+		rejoin_button.text = "RESUME ROOM (%s)" % NetworkState.room_code
 		rejoin_button.visible = true
 		return
 	var code := Settings.last_room_code
 	if code.length() == Protocol.ROOM_CODE_LENGTH:
-		rejoin_button.text = "Rejoin Last Room (%s)" % code
+		rejoin_button.text = "REJOIN LAST ROOM (%s)" % code
 		rejoin_button.visible = true
 	else:
 		rejoin_button.visible = false
